@@ -8,9 +8,10 @@ interface ShowCardProps {
   rating: string;
   year: string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-const ShowCard = ({ title, image, rating, year, className }: ShowCardProps) => {
+const ShowCard = ({ title, image, rating, year, className, style }: ShowCardProps) => {
   return (
     <Link to={`/show/${encodeURIComponent(title.toLowerCase())}`}>
       <Card
@@ -18,6 +19,7 @@ const ShowCard = ({ title, image, rating, year, className }: ShowCardProps) => {
           "group relative overflow-hidden rounded-lg transition-all duration-300 hover:scale-105",
           className
         )}
+        style={style}
       >
         <div className="aspect-[2/3] w-full overflow-hidden">
           <img
