@@ -7,13 +7,14 @@ interface ShowCardProps {
   image: string;
   rating: string;
   year: string;
+  id?: string;
   className?: string;
   style?: React.CSSProperties;
 }
 
-const ShowCard = ({ title, image, rating, year, className, style }: ShowCardProps) => {
+const ShowCard = ({ title, image, rating, year, id, className, style }: ShowCardProps) => {
   return (
-    <Link to={`/show/${encodeURIComponent(title.toLowerCase())}`}>
+    <Link to={`/show/${id || encodeURIComponent(title.toLowerCase())}`}>
       <Card
         className={cn(
           "group relative overflow-hidden rounded-lg transition-all duration-300 hover:scale-105",
@@ -23,7 +24,7 @@ const ShowCard = ({ title, image, rating, year, className, style }: ShowCardProp
       >
         <div className="aspect-[2/3] w-full overflow-hidden">
           <img
-            src={image}
+            src={image !== "N/A" ? image : "https://placehold.co/300x450?text=No+Image"}
             alt={title}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
             loading="lazy"
