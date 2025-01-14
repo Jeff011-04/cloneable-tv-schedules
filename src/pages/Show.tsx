@@ -29,6 +29,9 @@ const Show = () => {
     );
   }
 
+  // Safely handle potentially undefined values
+  const genres = show.Genre ? show.Genre.split(", ") : [];
+
   return (
     <div className="min-h-screen bg-background">
       <div
@@ -37,20 +40,28 @@ const Show = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
         <div className="absolute bottom-0 left-0 p-6 md:p-12">
-          <h1 className="text-4xl font-bold text-white md:text-6xl">{show.Title}</h1>
+          <h1 className="text-4xl font-bold text-white md:text-6xl">
+            {show.Title || "Untitled"}
+          </h1>
           <div className="mt-4 flex flex-wrap gap-4 text-white">
-            <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-400" />
-              <span>{show.imdbRating}/10</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              <span>{show.Year}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              <span>{show.Runtime}</span>
-            </div>
+            {show.imdbRating && (
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-400" />
+                <span>{show.imdbRating}/10</span>
+              </div>
+            )}
+            {show.Year && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                <span>{show.Year}</span>
+              </div>
+            )}
+            {show.Runtime && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                <span>{show.Runtime}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -59,18 +70,18 @@ const Show = () => {
         <div className="grid gap-8 md:grid-cols-3">
           <div className="md:col-span-2">
             <h2 className="text-2xl font-semibold">Plot</h2>
-            <p className="mt-4 text-muted-foreground">{show.Plot}</p>
+            <p className="mt-4 text-muted-foreground">{show.Plot || "No plot available"}</p>
 
             <Separator className="my-8" />
 
             <h2 className="text-2xl font-semibold">Cast</h2>
-            <p className="mt-4 text-muted-foreground">{show.Actors}</p>
+            <p className="mt-4 text-muted-foreground">{show.Actors || "Cast information not available"}</p>
 
             <Separator className="my-8" />
 
             <h2 className="text-2xl font-semibold">Genre</h2>
             <div className="mt-4 flex flex-wrap gap-2">
-              {show.Genre.split(", ").map((genre: string) => (
+              {genres.map((genre: string) => (
                 <span
                   key={genre}
                   className="rounded-full bg-primary/10 px-3 py-1 text-sm text-primary"
@@ -83,22 +94,22 @@ const Show = () => {
 
           <div>
             <img
-              src={show.Poster}
-              alt={show.Title}
+              src={show.Poster || "/placeholder.svg"}
+              alt={show.Title || "Show poster"}
               className="w-full rounded-lg shadow-xl"
             />
             <div className="mt-6 space-y-4">
               <div>
                 <h3 className="font-semibold">Director</h3>
-                <p className="text-muted-foreground">{show.Director}</p>
+                <p className="text-muted-foreground">{show.Director || "Not available"}</p>
               </div>
               <div>
                 <h3 className="font-semibold">Writer</h3>
-                <p className="text-muted-foreground">{show.Writer}</p>
+                <p className="text-muted-foreground">{show.Writer || "Not available"}</p>
               </div>
               <div>
                 <h3 className="font-semibold">Awards</h3>
-                <p className="text-muted-foreground">{show.Awards}</p>
+                <p className="text-muted-foreground">{show.Awards || "No awards information"}</p>
               </div>
             </div>
           </div>
