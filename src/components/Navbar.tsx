@@ -16,7 +16,7 @@ const Navbar = () => {
     <nav className="fixed left-0 right-0 top-0 z-50 bg-background/80 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between p-4">
         <Link to="/" className="text-xl font-bold">
-          TV Times
+          TV Lists
         </Link>
         
         <div className="flex items-center gap-4">
