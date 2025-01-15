@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ShowCardProps {
   id: string;
@@ -8,12 +9,14 @@ interface ShowCardProps {
   image: string;
   rating: string;
   year: string;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-const ShowCard = ({ id, title, image, rating, year }: ShowCardProps) => {
+const ShowCard = ({ id, title, image, rating, year, className, style }: ShowCardProps) => {
   return (
     <Link to={`/show/${id}`}>
-      <Card className="overflow-hidden transition-transform hover:scale-105">
+      <Card className={cn("overflow-hidden transition-transform hover:scale-105", className)} style={style}>
         <div className="aspect-[2/3] relative">
           <img
             src={image !== "N/A" ? image : "https://placehold.co/300x450?text=No+Image"}
