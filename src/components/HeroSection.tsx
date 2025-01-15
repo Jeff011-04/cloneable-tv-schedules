@@ -1,5 +1,5 @@
+import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Play, Info } from "lucide-react";
 
 interface HeroSectionProps {
   title: string;
@@ -20,11 +20,7 @@ const HeroSection = ({ title, description, backgroundImage }: HeroSectionProps) 
         <div className="max-w-2xl animate-fade-up">
           <h1 className="text-4xl font-bold text-white md:text-6xl">{title}</h1>
           <p className="mt-4 text-lg text-gray-200">{description}</p>
-          <div className="mt-8 flex gap-4">
-            <Button className="gap-2">
-              <Play className="h-5 w-5" />
-              Play Now
-            </Button>
+          <div className="mt-8">
             <Button variant="secondary" className="gap-2">
               <Info className="h-5 w-5" />
               More Info

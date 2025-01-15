@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Show from "./pages/Show";
 import Search from "./pages/Search";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Navbar from "./components/Navbar";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,11 +25,16 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/show/:id" element={<Show />} />
-          <Route path="/search" element={<Search />} />
-        </Routes>
+        <Navbar />
+        <div className="pt-16"> {/* Add padding to account for fixed navbar */}
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/show/:id" element={<Show />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+          </Routes>
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
