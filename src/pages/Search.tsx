@@ -44,9 +44,10 @@ const Search = () => {
             {shows.map((show: any) => (
               <ShowCard
                 key={show.imdbID}
+                id={show.imdbID}
                 title={show.Title}
                 image={show.Poster}
-                rating="N/A"
+                rating={show.imdbRating || "N/A"}
                 year={show.Year}
               />
             ))}
