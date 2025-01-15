@@ -3,8 +3,10 @@ import HeroSection from "@/components/HeroSection";
 import TrendingShows from "@/components/TrendingShows";
 import { getShowDetails } from "@/utils/api";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { user } = useAuth();
   const { data: friendsShow, isLoading } = useQuery({
     queryKey: ["show", "tt0108778"],
     queryFn: () => getShowDetails("tt0108778"), // Friends IMDB ID
@@ -20,6 +22,13 @@ const Index = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
+      {user && (
+        <div className="container mx-auto px-4 py-4">
+          <h2 className="text-2xl font-semibold">
+            Welcome back, {user.user_metadata.name || 'User'}!
+          </h2>
+        </div>
+      )}
       <HeroSection
         title={friendsShow?.Title || "Friends"}
         description={
