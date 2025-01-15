@@ -36,7 +36,9 @@ const Show = () => {
     <div className="min-h-screen bg-background">
       <div
         className="relative h-[50vh] bg-cover bg-center"
-        style={{ backgroundImage: `url(${show.Poster})` }}
+        style={{ 
+          backgroundImage: `url(${show.Poster !== "N/A" ? show.Poster : "https://placehold.co/1920x1080?text=No+Image"})` 
+        }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
         <div className="absolute bottom-0 left-0 p-6 md:p-12">
@@ -44,19 +46,19 @@ const Show = () => {
             {show.Title || "Untitled"}
           </h1>
           <div className="mt-4 flex flex-wrap gap-4 text-white">
-            {show.imdbRating && (
+            {show.imdbRating && show.imdbRating !== "N/A" && (
               <div className="flex items-center gap-2">
                 <Star className="h-5 w-5 text-yellow-400" />
                 <span>{show.imdbRating}/10</span>
               </div>
             )}
-            {show.Year && (
+            {show.Year && show.Year !== "N/A" && (
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
                 <span>{show.Year}</span>
               </div>
             )}
-            {show.Runtime && (
+            {show.Runtime && show.Runtime !== "N/A" && (
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
                 <span>{show.Runtime}</span>
@@ -94,7 +96,7 @@ const Show = () => {
 
           <div>
             <img
-              src={show.Poster || "/placeholder.svg"}
+              src={show.Poster !== "N/A" ? show.Poster : "https://placehold.co/300x450?text=No+Image"}
               alt={show.Title || "Show poster"}
               className="w-full rounded-lg shadow-xl"
             />
