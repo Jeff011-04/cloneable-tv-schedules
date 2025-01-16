@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { AuthError } from "@supabase/supabase-js";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,8 +16,18 @@ const Login = () => {
   const { signIn } = useAuth();
 
   const getErrorMessage = (error: AuthError) => {
-    if (error.message.includes("Email not confirmed")) {
-      return "Please check your email and confirm your account before signing in.";
+    if (error instanceof AuthApiError) {
+      switch (error.status) {
+        case 400:
+          if (error.message.includes("Email not confirmed")) {
+            return "Please check your email and confirm your account before signing in.";
+          }
+          return "Invalid login credentials. Please try again.";
+        case 422:
+          return "Invalid email format. Please check your email address.";
+        default:
+          return error.message;
+      }
     }
     return error.message;
   };
