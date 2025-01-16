@@ -29,8 +29,18 @@ const Show = () => {
   const { data: seasonData, isLoading: seasonLoading } = useQuery({
     queryKey: ["season", id, selectedSeason],
     queryFn: async () => {
+      const { data: { OMDB_API_KEY }, error } = await supabase
+        .from('secrets')
+        .select('OMDB_API_KEY')
+        .single();
+
+      if (error) {
+        console.error('Error fetching API key:', error);
+        throw new Error('Failed to fetch API key');
+      }
+
       const response = await fetch(
-        `https://www.omdbapi.com/?i=${id}&Season=${selectedSeason}&apikey=${import.meta.env.VITE_OMDB_API_KEY}`
+        `https://www.omdbapi.com/?i=${id}&Season=${selectedSeason}&apikey=${OMDB_API_KEY}`
       );
       const data = await response.json();
       return data;
