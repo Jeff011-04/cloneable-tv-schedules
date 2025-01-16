@@ -21,13 +21,10 @@ const Show = () => {
     if (!user || !show) return;
 
     try {
-      const { error } = await supabase.from('watched_shows').insert({
+      const { error } = await supabase.from('watch_history').insert({
         user_id: user.id,
         show_id: id,
-        title: show.Title,
-        image: show.Poster,
-        rating: show.imdbRating,
-        year: show.Year,
+        show_title: show.Title,
       });
 
       if (error) throw error;
