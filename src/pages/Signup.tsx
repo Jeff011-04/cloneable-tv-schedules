@@ -4,21 +4,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual signup logic
-    toast({
-      title: "Signup functionality coming soon",
-      description: "This feature is not yet implemented.",
-    });
+    setIsLoading(true);
+
+    try {
+      await signUp(email, password, name);
+      toast({
+        title: "Success!",
+        description: "Your account has been created. Please check your email to confirm your account.",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing up:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create account",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -68,8 +85,8 @@ const Signup = () => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full">
-            Sign up
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating account..." : "Sign up"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
