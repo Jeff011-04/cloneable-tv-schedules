@@ -3,21 +3,38 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual authentication logic
-    toast({
-      title: "Login functionality coming soon",
-      description: "This feature is not yet implemented.",
-    });
+    setIsLoading(true);
+
+    try {
+      await signIn(email, password);
+      toast({
+        title: "Success!",
+        description: "You have been logged in successfully.",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing in:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to sign in",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -56,8 +73,8 @@ const Login = () => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full">
-            Sign in
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Signing in..." : "Sign in"}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
