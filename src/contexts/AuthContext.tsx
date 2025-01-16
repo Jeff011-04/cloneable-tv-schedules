@@ -16,16 +16,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const checkUserStatus = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_deleted')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking user status:', error);
+      return true; // Assume deleted on error for safety
+    }
+
+    return data?.is_deleted ?? false;
+  };
+
   useEffect(() => {
     // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const isDeleted = await checkUserStatus(session.user.id);
+        if (isDeleted) {
+          await supabase.auth.signOut();
+          setUser(null);
+        } else {
+          setUser(session.user);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
     // Listen for changes on auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const isDeleted = await checkUserStatus(session.user.id);
+        if (isDeleted) {
+          await supabase.auth.signOut();
+          setUser(null);
+        } else {
+          setUser(session.user);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
@@ -46,11 +81,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
     if (error) throw error;
+
+    if (data.user) {
+      const isDeleted = await checkUserStatus(data.user.id);
+      if (isDeleted) {
+        await supabase.auth.signOut();
+        throw new Error('This account has been deleted.');
+      }
+    }
   };
 
   const signOut = async () => {

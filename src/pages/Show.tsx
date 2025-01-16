@@ -5,16 +5,37 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Show = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [selectedSeason, setSelectedSeason] = useState<string>("1");
 
-  const { data: show, isLoading } = useQuery({
+  const { data: show, isLoading: showLoading } = useQuery({
     queryKey: ["show", id],
     queryFn: () => getShowDetails(id!),
+  });
+
+  const { data: seasonData, isLoading: seasonLoading } = useQuery({
+    queryKey: ["season", id, selectedSeason],
+    queryFn: async () => {
+      const response = await fetch(
+        `https://www.omdbapi.com/?i=${id}&Season=${selectedSeason}&apikey=${import.meta.env.VITE_OMDB_API_KEY}`
+      );
+      const data = await response.json();
+      return data;
+    },
+    enabled: !!show && show.Type === "series",
   });
 
   const handleWatch = async () => {
@@ -43,7 +64,7 @@ const Show = () => {
     }
   };
 
-  if (isLoading) {
+  if (showLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -92,6 +113,56 @@ const Show = () => {
                 <p>{show.Director}</p>
               </div>
             </div>
+
+            {show.Type === "series" && (
+              <div className="mt-6">
+                <h2 className="text-2xl font-semibold mb-4">Seasons</h2>
+                <div className="space-y-4">
+                  <Select
+                    value={selectedSeason}
+                    onValueChange={setSelectedSeason}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select Season" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: parseInt(show.totalSeasons) }, (_, i) => (
+                        <SelectItem key={i + 1} value={(i + 1).toString()}>
+                          Season {i + 1}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {seasonLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold">
+                        Episodes ({seasonData?.Episodes?.length || 0})
+                      </h3>
+                      <div className="space-y-2">
+                        {seasonData?.Episodes?.map((episode: any) => (
+                          <div
+                            key={episode.imdbID}
+                            className="p-4 rounded-lg border border-border"
+                          >
+                            <h4 className="font-semibold">
+                              Episode {episode.Episode}: {episode.Title}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              Released: {episode.Released}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
