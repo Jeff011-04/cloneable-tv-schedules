@@ -22,20 +22,12 @@ const Navbar = () => {
 
   const handleDeleteAccount = async () => {
     try {
-      // First update the profile
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ is_deleted: true })
         .eq('id', user?.id);
 
       if (profileError) throw profileError;
-
-      // Then delete the auth user
-      const { error: authError } = await supabase.auth.admin.deleteUser(
-        user?.id as string
-      );
-
-      if (authError) throw authError;
 
       await signOut();
       navigate("/login");
