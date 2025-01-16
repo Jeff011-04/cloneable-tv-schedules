@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { AuthError } from "@supabase/supabase-js";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -13,6 +14,13 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn } = useAuth();
+
+  const getErrorMessage = (error: AuthError) => {
+    if (error.message.includes("Email not confirmed")) {
+      return "Please check your email and confirm your account before signing in.";
+    }
+    return error.message;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,10 +35,14 @@ const Login = () => {
       navigate("/");
     } catch (error) {
       console.error("Error signing in:", error);
+      const errorMessage = error instanceof AuthError 
+        ? getErrorMessage(error)
+        : "Failed to sign in";
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to sign in",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
