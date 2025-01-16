@@ -17,22 +17,46 @@ const getApiKey = async () => {
 };
 
 export const searchShows = async (query: string) => {
-  const API_KEY = await getApiKey();
-  const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&s=${query}&type=series`);
-  const data = await response.json();
-  return data.Search || [];
+  try {
+    const API_KEY = await getApiKey();
+    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&s=${query}&type=series`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.Search || [];
+  } catch (error) {
+    console.error('Search shows error:', error);
+    throw error;
+  }
 };
 
 export const getShowDetails = async (id: string) => {
-  const API_KEY = await getApiKey();
-  const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&i=${id}&plot=full`);
-  const data = await response.json();
-  return data;
+  try {
+    const API_KEY = await getApiKey();
+    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&i=${id}&plot=full`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Get show details error:', error);
+    throw error;
+  }
 };
 
 export const getShowsByCategory = async (category: string) => {
-  const API_KEY = await getApiKey();
-  const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&s=${category}&type=series`);
-  const data = await response.json();
-  return data.Search || [];
+  try {
+    const API_KEY = await getApiKey();
+    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&s=${category}&type=series`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.Search || [];
+  } catch (error) {
+    console.error('Get shows by category error:', error);
+    throw error;
+  }
 };
