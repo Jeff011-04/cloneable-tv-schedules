@@ -13,6 +13,10 @@ const getApiKey = async () => {
     throw new Error('Failed to fetch API key');
   }
 
+  if (!OMDB_API_KEY) {
+    throw new Error('OMDB API key not found in secrets');
+  }
+
   return OMDB_API_KEY;
 };
 

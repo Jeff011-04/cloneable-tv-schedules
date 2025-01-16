@@ -29,21 +29,35 @@ const Show = () => {
   const { data: seasonData, isLoading: seasonLoading } = useQuery({
     queryKey: ["season", id, selectedSeason],
     queryFn: async () => {
-      const { data: { OMDB_API_KEY }, error } = await supabase
-        .from('secrets')
-        .select('OMDB_API_KEY')
-        .single();
+      try {
+        const { data: { OMDB_API_KEY }, error } = await supabase
+          .from('secrets')
+          .select('OMDB_API_KEY')
+          .single();
 
-      if (error) {
-        console.error('Error fetching API key:', error);
-        throw new Error('Failed to fetch API key');
+        if (error) {
+          console.error('Error fetching API key:', error);
+          throw new Error('Failed to fetch API key');
+        }
+
+        if (!OMDB_API_KEY) {
+          throw new Error('OMDB API key not found in secrets');
+        }
+
+        const response = await fetch(
+          `https://www.omdbapi.com/?i=${id}&Season=${selectedSeason}&apikey=${OMDB_API_KEY}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error fetching season data:', error);
+        throw error;
       }
-
-      const response = await fetch(
-        `https://www.omdbapi.com/?i=${id}&Season=${selectedSeason}&apikey=${OMDB_API_KEY}`
-      );
-      const data = await response.json();
-      return data;
     },
     enabled: !!show && show.Type === "series",
   });
