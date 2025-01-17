@@ -27,13 +27,18 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
     queryFn: () => getShowsByCategory(search),
     retry: 1,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    onError: (error: Error) => {
-      console.error(`Error fetching ${title}:`, error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: `Failed to load ${title}. ${error.message}`,
-      });
+    meta: {
+      errorMessage: `Failed to load ${title}`,
+    },
+    onSettled: (data, error: Error | null) => {
+      if (error) {
+        console.error(`Error fetching ${title}:`, error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Failed to load ${title}. ${error.message}`,
+        });
+      }
     },
   });
 
