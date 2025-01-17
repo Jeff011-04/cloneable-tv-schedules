@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getShowDetails } from "@/utils/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -88,6 +88,32 @@ const Show = () => {
     }
   };
 
+  const handleAddToWatchLater = async () => {
+    if (!user || !show) return;
+
+    try {
+      const { error } = await supabase.from('watch_later').insert({
+        user_id: user.id,
+        show_id: id,
+        show_title: show.Title,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Added to watch later",
+        description: `${show.Title} has been added to your watch later list.`,
+      });
+    } catch (error) {
+      console.error('Error adding to watch later:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add show to watch later list.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (showLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -110,9 +136,15 @@ const Show = () => {
             className="w-full rounded-lg shadow-lg"
           />
           {user && (
-            <Button onClick={handleWatch} className="mt-4 w-full">
-              Add to Watch History
-            </Button>
+            <div className="mt-4 space-y-2">
+              <Button onClick={handleWatch} className="w-full">
+                Add to Watch History
+              </Button>
+              <Button onClick={handleAddToWatchLater} variant="outline" className="w-full">
+                <Clock className="mr-2 h-4 w-4" />
+                Watch Later
+              </Button>
+            </div>
           )}
         </div>
         <div>

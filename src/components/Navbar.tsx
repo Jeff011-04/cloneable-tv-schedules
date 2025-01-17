@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, History, Settings } from "lucide-react";
+import { Search, History, Settings, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -71,6 +71,14 @@ const Navbar = () => {
                 className="rounded-full"
               >
                 <History className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/watch-later")}
+                className="rounded-full"
+              >
+                <Clock className="h-5 w-5" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
