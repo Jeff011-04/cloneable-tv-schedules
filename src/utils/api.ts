@@ -75,7 +75,7 @@ export const getShowDetails = async (id: string) => {
 export const getShowsByCategory = async (category: string) => {
   try {
     const API_KEY = await getApiKey();
-    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&s=${category}&type=series`);
+    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&s=${encodeURIComponent(category)}&type=series`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

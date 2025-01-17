@@ -21,8 +21,15 @@ const TrendingShows = () => {
   );
 };
 
+interface Show {
+  imdbID: string;
+  Title: string;
+  Poster: string;
+  Year: string;
+}
+
 const CategorySection = ({ title, search }: { title: string; search: string }) => {
-  const { data: shows, isLoading, error } = useQuery({
+  const { data: shows, isLoading, error } = useQuery<Show[]>({
     queryKey: ["shows", search],
     queryFn: () => getShowsByCategory(search),
     retry: 1,
@@ -30,7 +37,6 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
     gcTime: 1000 * 60 * 60, // Keep in cache for 1 hour
   });
 
-  // Handle errors using the error value
   if (error) {
     console.error(`Error fetching ${title}:`, error);
     toast({
@@ -38,6 +44,7 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
       title: "Error",
       description: `Failed to load ${title}. ${error instanceof Error ? error.message : 'Unknown error'}`,
     });
+    return null;
   }
 
   if (isLoading) {
@@ -63,7 +70,7 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
         <Separator className="bg-gray-800" />
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
-        {shows.map((show: any, index: number) => (
+        {shows.map((show: Show, index: number) => (
           <ShowCard
             key={show.imdbID}
             id={show.imdbID}
