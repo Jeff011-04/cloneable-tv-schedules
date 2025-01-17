@@ -3,7 +3,6 @@ import ShowCard from "./ShowCard";
 import { Separator } from "./ui/separator";
 import { getShowsByCategory } from "@/utils/api";
 import { Loader2 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
 
 const TrendingShows = () => {
   const categories = [
@@ -21,31 +20,11 @@ const TrendingShows = () => {
   );
 };
 
-interface Show {
-  imdbID: string;
-  Title: string;
-  Poster: string;
-  Year: string;
-}
-
 const CategorySection = ({ title, search }: { title: string; search: string }) => {
-  const { data: shows, isLoading, error } = useQuery<Show[]>({
+  const { data: shows, isLoading } = useQuery({
     queryKey: ["shows", search],
     queryFn: () => getShowsByCategory(search),
-    retry: 1,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    gcTime: 1000 * 60 * 60, // Keep in cache for 1 hour
   });
-
-  if (error) {
-    console.error(`Error fetching ${title}:`, error);
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: `Failed to load ${title}. ${error instanceof Error ? error.message : 'Unknown error'}`,
-    });
-    return null;
-  }
 
   if (isLoading) {
     return (
@@ -56,11 +35,7 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
   }
 
   if (!shows || shows.length === 0) {
-    return (
-      <div className="rounded-lg bg-muted p-4 text-center">
-        No shows found for this category.
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -70,7 +45,7 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
         <Separator className="bg-gray-800" />
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
-        {shows.map((show: Show, index: number) => (
+        {shows.map((show: any, index: number) => (
           <ShowCard
             key={show.imdbID}
             id={show.imdbID}

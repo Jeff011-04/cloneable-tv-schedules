@@ -11,7 +11,6 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Navbar from "./components/Navbar";
 import WatchHistory from "./pages/WatchHistory";
-import WatchLater from "./pages/WatchLater";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +37,6 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/watch-history" element={<WatchHistory />} />
-              <Route path="/watch-later" element={<WatchLater />} />
             </Routes>
           </div>
         </BrowserRouter>

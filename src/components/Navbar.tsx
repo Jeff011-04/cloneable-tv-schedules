@@ -1,15 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, History, Settings, Clock } from "lucide-react";
+import { Search, History } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { supabase } from "@/lib/supabase";
-import { toast } from "@/components/ui/use-toast";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -18,31 +10,6 @@ const Navbar = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ is_deleted: true })
-        .eq('id', user?.id);
-
-      if (profileError) throw profileError;
-
-      await signOut();
-      navigate("/login");
-      toast({
-        title: "Account deleted",
-        description: "Your account has been successfully deleted.",
-      });
-    } catch (error) {
-      console.error('Delete account error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete account. Please try again.",
-      });
-    }
   };
 
   return (
@@ -72,29 +39,9 @@ const Navbar = () => {
               >
                 <History className="h-5 w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/watch-later")}
-                className="rounded-full"
-              >
-                <Clock className="h-5 w-5" />
+              <Button variant="ghost" onClick={handleSignOut}>
+                Sign out
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Settings className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleDeleteAccount} className="text-destructive">
-                    Delete Account
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </>
           ) : (
             <div className="flex items-center gap-2">

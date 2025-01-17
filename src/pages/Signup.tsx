@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { AuthError, AuthApiError } from "@supabase/supabase-js";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -15,27 +14,6 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signUp } = useAuth();
-
-  const getErrorMessage = (error: AuthError) => {
-    if (error instanceof AuthApiError) {
-      // Check the error code from the response body
-      const errorBody = JSON.parse(error.message);
-      if (errorBody.code === "user_already_exists") {
-        return "This email is already registered. Please try signing in instead.";
-      }
-      
-      // Fallback to status-based messages
-      switch (error.status) {
-        case 422:
-          return "Invalid input. Please check your details.";
-        case 400:
-          return "Invalid email or password format.";
-        default:
-          return errorBody.message || error.message;
-      }
-    }
-    return error.message;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,16 +28,10 @@ const Signup = () => {
       navigate("/");
     } catch (error) {
       console.error("Error signing up:", error);
-      let errorMessage = "Failed to create account";
-      
-      if (error instanceof AuthError) {
-        errorMessage = getErrorMessage(error);
-      }
-      
       toast({
         variant: "destructive",
         title: "Error",
-        description: errorMessage,
+        description: error instanceof Error ? error.message : "Failed to create account",
       });
     } finally {
       setIsLoading(false);

@@ -6,10 +6,9 @@ interface HeroSectionProps {
   title: string;
   description: string;
   backgroundImage: string;
-  showId: string;
 }
 
-const HeroSection = ({ title, description, backgroundImage, showId }: HeroSectionProps) => {
+const HeroSection = ({ title, description, backgroundImage }: HeroSectionProps) => {
   const navigate = useNavigate();
 
   return (
@@ -28,7 +27,7 @@ const HeroSection = ({ title, description, backgroundImage, showId }: HeroSectio
             <Button 
               variant="secondary" 
               className="gap-2"
-              onClick={() => navigate(`/show/${showId}`)}
+              onClick={() => navigate(`/show/${title}`)}
             >
               <Info className="h-5 w-5" />
               More Info
