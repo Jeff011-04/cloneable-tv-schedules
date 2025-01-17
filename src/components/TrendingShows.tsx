@@ -25,18 +25,24 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
   const { data: shows, isLoading, error } = useQuery({
     queryKey: ["shows", search],
     queryFn: () => getShowsByCategory(search),
-    retry: 2,
+    retry: 1,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    onError: (error: Error) => {
+      console.error(`Error fetching ${title}:`, error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Failed to load ${title}. ${error.message}`,
+      });
+    },
   });
 
   if (error) {
-    console.error('Error fetching shows:', error);
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: "Failed to load shows. Please try again later.",
-    });
-    return null;
+    return (
+      <div className="rounded-lg bg-destructive/10 p-4 text-center text-destructive">
+        Failed to load shows. Please try again later.
+      </div>
+    );
   }
 
   if (isLoading) {
@@ -48,7 +54,11 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
   }
 
   if (!shows || shows.length === 0) {
-    return null;
+    return (
+      <div className="rounded-lg bg-muted p-4 text-center">
+        No shows found for this category.
+      </div>
+    );
   }
 
   return (
