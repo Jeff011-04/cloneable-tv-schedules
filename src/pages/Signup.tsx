@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +15,23 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signUp } = useAuth();
+
+  const getErrorMessage = (error: AuthError) => {
+    if (error instanceof AuthApiError) {
+      switch (error.status) {
+        case 422:
+          if (error.message.includes("User already registered")) {
+            return "This email is already registered. Please try signing in instead.";
+          }
+          return "Invalid input. Please check your details.";
+        case 400:
+          return "Invalid email or password format.";
+        default:
+          return error.message;
+      }
+    }
+    return error.message;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +46,14 @@ const Signup = () => {
       navigate("/");
     } catch (error) {
       console.error("Error signing up:", error);
+      const errorMessage = error instanceof AuthError 
+        ? getErrorMessage(error)
+        : "Failed to create account";
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create account",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
