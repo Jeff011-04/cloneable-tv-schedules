@@ -4,8 +4,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import ShowCard from "@/components/ShowCard";
 import { Loader2 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
+import { useQuery } from "@tanstack/react-query";
+import { getShowDetails } from "@/utils/api";
 
 type WatchHistoryEntry = Tables<"watch_history">;
+
+interface ShowDetails {
+  id: string;
+  title: string;
+  image: string;
+  rating: string;
+  year: string;
+}
 
 const WatchHistory = () => {
   const { user } = useAuth();
@@ -46,17 +56,35 @@ const WatchHistory = () => {
       <h1 className="mb-8 text-3xl font-bold">Watch History</h1>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {watchHistory.map((entry) => (
-          <ShowCard
-            key={entry.id}
-            id={entry.show_id}
-            title={entry.show_title}
-            image="https://placehold.co/300x450?text=No+Image"
-            rating="N/A"
-            year="N/A"
-          />
+          <WatchHistoryCard key={entry.id} showId={entry.show_id} title={entry.show_title} />
         ))}
       </div>
     </div>
+  );
+};
+
+const WatchHistoryCard = ({ showId, title }: { showId: string; title: string }) => {
+  const { data: show, isLoading } = useQuery({
+    queryKey: ['show', showId],
+    queryFn: () => getShowDetails(showId),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="aspect-[2/3] animate-pulse rounded-lg bg-gray-200">
+        <div className="h-full w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <ShowCard
+      id={showId}
+      title={title}
+      image={show?.Poster || "https://placehold.co/300x450?text=No+Image"}
+      rating={show?.imdbRating || "N/A"}
+      year={show?.Year || "N/A"}
+    />
   );
 };
 
