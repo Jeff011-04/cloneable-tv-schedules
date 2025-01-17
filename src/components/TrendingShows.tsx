@@ -3,6 +3,7 @@ import ShowCard from "./ShowCard";
 import { Separator } from "./ui/separator";
 import { getShowsByCategory } from "@/utils/api";
 import { Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 const TrendingShows = () => {
   const categories = [
@@ -21,10 +22,22 @@ const TrendingShows = () => {
 };
 
 const CategorySection = ({ title, search }: { title: string; search: string }) => {
-  const { data: shows, isLoading } = useQuery({
+  const { data: shows, isLoading, error } = useQuery({
     queryKey: ["shows", search],
     queryFn: () => getShowsByCategory(search),
+    retry: 2,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
+
+  if (error) {
+    console.error('Error fetching shows:', error);
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: "Failed to load shows. Please try again later.",
+    });
+    return null;
+  }
 
   if (isLoading) {
     return (
