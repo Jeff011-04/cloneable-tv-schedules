@@ -30,29 +30,29 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleDeleteAccount = async () => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_deleted: true })
-        .eq('id', user?.id);
+  // const handleDeleteAccount = async () => {
+  //   try {
+  //     const { error } = await supabase
+  //       .from('profiles')
+  //       .update({ is_deleted: true })
+  //       .eq('id', user?.id);
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      await supabase.auth.signOut();
-      navigate('/login');
-      toast({
-        title: "Account deleted",
-        description: "Your account has been successfully deleted.",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete account. Please try again.",
-      });
-    }
-  };
+  //     await supabase.auth.signOut();
+  //     navigate('/login');
+  //     toast({
+  //       title: "Account deleted",
+  //       description: "Your account has been successfully deleted.",
+  //     });
+  //   } catch (error) {
+  //     toast({
+  //       variant: "destructive",
+  //       title: "Error",
+  //       description: "Failed to delete account. Please try again.",
+  //     });
+  //   }
+  // };
 
   if (isLoading) {
     return (
@@ -70,13 +70,16 @@ const Index = () => {
             <h2 className="text-2xl font-semibold">
               Welcome back, {user.user_metadata.name || 'User'}!
             </h2>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteAccount}
-              className="ml-4"
-            >
-              Delete Account
-            </Button>
+            {/* 
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteAccount}
+                className="ml-4"
+              >
+                Delete Account
+              </Button> 
+              */}
+
           </div>
         </div>
       )}
