@@ -18,16 +18,20 @@ const Signup = () => {
 
   const getErrorMessage = (error: AuthError) => {
     if (error instanceof AuthApiError) {
+      // Check the error code from the response body
+      const errorBody = JSON.parse(error.message);
+      if (errorBody.code === "user_already_exists") {
+        return "This email is already registered. Please try signing in instead.";
+      }
+      
+      // Fallback to status-based messages
       switch (error.status) {
         case 422:
-          if (error.message.includes("User already registered")) {
-            return "This email is already registered. Please try signing in instead.";
-          }
           return "Invalid input. Please check your details.";
         case 400:
           return "Invalid email or password format.";
         default:
-          return error.message;
+          return errorBody.message || error.message;
       }
     }
     return error.message;
@@ -46,9 +50,11 @@ const Signup = () => {
       navigate("/");
     } catch (error) {
       console.error("Error signing up:", error);
-      const errorMessage = error instanceof AuthError 
-        ? getErrorMessage(error)
-        : "Failed to create account";
+      let errorMessage = "Failed to create account";
+      
+      if (error instanceof AuthError) {
+        errorMessage = getErrorMessage(error);
+      }
       
       toast({
         variant: "destructive",
