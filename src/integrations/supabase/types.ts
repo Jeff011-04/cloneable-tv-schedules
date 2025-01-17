@@ -62,6 +62,38 @@ export type Database = {
           },
         ]
       }
+      watch_later: {
+        Row: {
+          added_at: string
+          id: string
+          show_id: string
+          show_title: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          show_id: string
+          show_title: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          show_id?: string
+          show_title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_later_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
