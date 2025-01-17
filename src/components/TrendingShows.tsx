@@ -30,7 +30,7 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
     gcTime: 1000 * 60 * 60, // Keep in cache for 1 hour
   });
 
-  // Handle errors separately using the error value
+  // Handle errors using the error value
   if (error) {
     console.error(`Error fetching ${title}:`, error);
     toast({
