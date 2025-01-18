@@ -6,11 +6,21 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Show = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [selectedSeason, setSelectedSeason] = useState<string>("1");
+  const [selectedEpisode, setSelectedEpisode] = useState<string>("1");
 
   const { data: show, isLoading } = useQuery({
     queryKey: ["show", id],
@@ -54,6 +64,11 @@ const Show = () => {
   if (!show) {
     return <div>Show not found</div>;
   }
+
+  const totalSeasons = parseInt(show.totalSeasons) || 0;
+  const seasonsArray = Array.from({ length: totalSeasons }, (_, i) => (i + 1).toString());
+  const episodesPerSeason = 24; // This is a default value since OMDB API doesn't provide episodes per season
+  const episodesArray = Array.from({ length: episodesPerSeason }, (_, i) => (i + 1).toString());
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -100,6 +115,44 @@ const Show = () => {
                   <div>
                     <h2 className="font-semibold">Episodes</h2>
                     <p>{show.Episodes || "Varies by season"}</p>
+                  </div>
+                  <div className="col-span-2 space-y-4">
+                    <div className="space-y-2">
+                      <h2 className="font-semibold">Select Season</h2>
+                      <Select
+                        value={selectedSeason}
+                        onValueChange={setSelectedSeason}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select season" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {seasonsArray.map((season) => (
+                            <SelectItem key={season} value={season}>
+                              Season {season}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="font-semibold">Select Episode</h2>
+                      <Select
+                        value={selectedEpisode}
+                        onValueChange={setSelectedEpisode}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select episode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {episodesArray.map((episode) => (
+                            <SelectItem key={episode} value={episode}>
+                              Episode {episode}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </>
               )}
