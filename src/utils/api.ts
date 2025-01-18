@@ -24,3 +24,9 @@ export const getEpisodeDetails = async (id: string, season: string, episode: str
   const data = await response.json();
   return data;
 };
+
+export const getSeasonDetails = async (id: string, season: string) => {
+  const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&i=${id}&Season=${season}`);
+  const data = await response.json();
+  return data.Episodes || [];
+};

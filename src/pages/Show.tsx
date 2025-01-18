@@ -1,12 +1,12 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getShowDetails } from "@/utils/api";
+import { getShowDetails, getSeasonDetails } from "@/utils/api";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -21,11 +21,28 @@ const Show = () => {
   const { toast } = useToast();
   const [selectedSeason, setSelectedSeason] = useState<string>("1");
   const [selectedEpisode, setSelectedEpisode] = useState<string>("1");
+  const [episodes, setEpisodes] = useState<Array<{ Episode: string; Title: string }>>([]);
 
   const { data: show, isLoading } = useQuery({
     queryKey: ["show", id],
     queryFn: () => getShowDetails(id!),
   });
+
+  const { data: seasonEpisodes, isLoading: isLoadingEpisodes } = useQuery({
+    queryKey: ["episodes", id, selectedSeason],
+    queryFn: () => getSeasonDetails(id!, selectedSeason),
+    enabled: !!id && !!selectedSeason && show?.Type === "series",
+  });
+
+  useEffect(() => {
+    if (seasonEpisodes) {
+      setEpisodes(seasonEpisodes);
+      // Reset episode selection when season changes
+      if (seasonEpisodes.length > 0) {
+        setSelectedEpisode(seasonEpisodes[0].Episode);
+      }
+    }
+  }, [seasonEpisodes]);
 
   const handleWatch = async () => {
     if (!user || !show) return;
@@ -67,8 +84,6 @@ const Show = () => {
 
   const totalSeasons = parseInt(show.totalSeasons) || 0;
   const seasonsArray = Array.from({ length: totalSeasons }, (_, i) => (i + 1).toString());
-  const episodesPerSeason = 24; // This is a default value since OMDB API doesn't provide episodes per season
-  const episodesArray = Array.from({ length: episodesPerSeason }, (_, i) => (i + 1).toString());
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -135,24 +150,30 @@ const Show = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <h2 className="font-semibold">Select Episode</h2>
-                      <Select
-                        value={selectedEpisode}
-                        onValueChange={setSelectedEpisode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select episode" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {episodesArray.map((episode) => (
-                            <SelectItem key={episode} value={episode}>
-                              Episode {episode}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {isLoadingEpisodes ? (
+                      <div className="flex justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <h2 className="font-semibold">Select Episode</h2>
+                        <Select
+                          value={selectedEpisode}
+                          onValueChange={setSelectedEpisode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select episode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {episodes.map((episode) => (
+                              <SelectItem key={episode.Episode} value={episode.Episode}>
+                                Episode {episode.Episode}: {episode.Title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
