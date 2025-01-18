@@ -91,6 +91,18 @@ const Show = () => {
                 <h2 className="font-semibold">Director</h2>
                 <p>{show.Director}</p>
               </div>
+              {show.Type === "series" && (
+                <>
+                  <div>
+                    <h2 className="font-semibold">Total Seasons</h2>
+                    <p>{show.totalSeasons}</p>
+                  </div>
+                  <div>
+                    <h2 className="font-semibold">Episodes</h2>
+                    <p>{show.Episodes || "Varies by season"}</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
