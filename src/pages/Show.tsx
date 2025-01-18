@@ -128,22 +128,19 @@ const Show = () => {
                   </div>
                   <div className="col-span-2 space-y-4">
                     <div className="space-y-2">
-                      <h2 className="font-semibold">Select Season</h2>
-                      <Select
-                        value={selectedSeason}
-                        onValueChange={setSelectedSeason}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select season" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {seasonsArray.map((season) => (
-                            <SelectItem key={season} value={season}>
-                              Season {season}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <h2 className="font-semibold mb-4">Seasons</h2>
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                        {seasonsArray.map((season) => (
+                          <Button
+                            key={season}
+                            variant={selectedSeason === season ? "default" : "outline"}
+                            onClick={() => setSelectedSeason(season)}
+                            className="w-full h-12 text-lg font-medium transition-all duration-200 hover:scale-105"
+                          >
+                            {season}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                     {isLoadingEpisodes ? (
                       <div className="flex justify-center">
