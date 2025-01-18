@@ -20,7 +20,6 @@ const Show = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedSeason, setSelectedSeason] = useState<string>("1");
-  const [selectedEpisode, setSelectedEpisode] = useState<string>("1");
   const [episodes, setEpisodes] = useState<Array<{ Episode: string; Title: string }>>([]);
 
   const { data: show, isLoading } = useQuery({
@@ -37,10 +36,6 @@ const Show = () => {
   useEffect(() => {
     if (seasonEpisodes) {
       setEpisodes(seasonEpisodes);
-      // Reset episode selection when season changes
-      if (seasonEpisodes.length > 0) {
-        setSelectedEpisode(seasonEpisodes[0].Episode);
-      }
     }
   }, [seasonEpisodes]);
 
@@ -155,23 +150,20 @@ const Show = () => {
                         <Loader2 className="h-4 w-4 animate-spin" />
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <h2 className="font-semibold">Select Episode</h2>
-                        <Select
-                          value={selectedEpisode}
-                          onValueChange={setSelectedEpisode}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select episode" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {episodes.map((episode) => (
-                              <SelectItem key={episode.Episode} value={episode.Episode}>
+                      <div className="space-y-4">
+                        <h2 className="font-semibold">Episodes</h2>
+                        <div className="space-y-2">
+                          {episodes.map((episode) => (
+                            <div
+                              key={episode.Episode}
+                              className="rounded-lg border p-4 hover:bg-accent"
+                            >
+                              <h3 className="font-medium">
                                 Episode {episode.Episode}: {episode.Title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                              </h3>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
