@@ -18,14 +18,26 @@ const getApiKey = async () => {
   }
 };
 
+const fetchWithRetry = async (url: string, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+    }
+  }
+};
+
 export const searchShows = async (query: string) => {
   try {
     const apiKey = await getApiKey();
-    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(query)}&type=series`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
+    const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(query)}&type=series`;
+    const data = await fetchWithRetry(url);
     return data.Search || [];
   } catch (error) {
     console.error('Error searching shows:', error);
@@ -36,11 +48,11 @@ export const searchShows = async (query: string) => {
 export const getShowDetails = async (id: string) => {
   try {
     const apiKey = await getApiKey();
-    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&plot=full`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const url = `${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&plot=full`;
+    const data = await fetchWithRetry(url);
+    if (data.Error) {
+      throw new Error(data.Error);
     }
-    const data = await response.json();
     return data;
   } catch (error) {
     console.error('Error getting show details:', error);
@@ -51,11 +63,8 @@ export const getShowDetails = async (id: string) => {
 export const getShowsByCategory = async (category: string) => {
   try {
     const apiKey = await getApiKey();
-    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(category)}&type=series`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
+    const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(category)}&type=series`;
+    const data = await fetchWithRetry(url);
     return data.Search || [];
   } catch (error) {
     console.error('Error getting shows by category:', error);
@@ -66,11 +75,11 @@ export const getShowsByCategory = async (category: string) => {
 export const getEpisodeDetails = async (id: string, season: string, episode: string) => {
   try {
     const apiKey = await getApiKey();
-    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}&Episode=${encodeURIComponent(episode)}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const url = `${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}&Episode=${encodeURIComponent(episode)}`;
+    const data = await fetchWithRetry(url);
+    if (data.Error) {
+      throw new Error(data.Error);
     }
-    const data = await response.json();
     return data;
   } catch (error) {
     console.error('Error getting episode details:', error);
@@ -81,11 +90,11 @@ export const getEpisodeDetails = async (id: string, season: string, episode: str
 export const getSeasonDetails = async (id: string, season: string) => {
   try {
     const apiKey = await getApiKey();
-    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const url = `${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}`;
+    const data = await fetchWithRetry(url);
+    if (data.Error) {
+      throw new Error(data.Error);
     }
-    const data = await response.json();
     return data.Episodes || [];
   } catch (error) {
     console.error('Error getting season details:', error);
