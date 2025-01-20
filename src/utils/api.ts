@@ -6,9 +6,16 @@ const BASE_URL = 'https://www.omdbapi.com/';
 const getApiKey = async () => {
   if (API_KEY) return API_KEY;
   
-  const { data: { OMDB_API_KEY } } = await supabase.functions.invoke('get-omdb-key');
-  API_KEY = OMDB_API_KEY;
-  return API_KEY;
+  try {
+    const { data, error } = await supabase.functions.invoke('get-omdb-key');
+    if (error) throw error;
+    
+    API_KEY = data.OMDB_API_KEY;
+    return API_KEY;
+  } catch (error) {
+    console.error('Error fetching OMDB API key:', error);
+    throw error;
+  }
 };
 
 export const searchShows = async (query: string) => {
