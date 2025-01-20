@@ -32,18 +32,27 @@ const Show = () => {
     const checkWatchHistory = async () => {
       if (!user || !id) return;
       
-      const { data } = await supabase
-        .from('watch_history')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('show_id', id)
-        .maybeSingle();
-      
-      setIsInWatchHistory(!!data);
+      try {
+        const { data } = await supabase
+          .from('watch_history')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('show_id', decodeURIComponent(id))
+          .maybeSingle();
+        
+        setIsInWatchHistory(!!data);
+      } catch (error) {
+        console.error('Error checking watch history:', error);
+        toast({
+          title: "Error",
+          description: "Failed to check watch history status.",
+          variant: "destructive",
+        });
+      }
     };
 
     checkWatchHistory();
-  }, [user, id]);
+  }, [user, id, toast]);
 
   useEffect(() => {
     if (seasonEpisodes) {
@@ -61,7 +70,7 @@ const Show = () => {
           .from('watch_history')
           .delete()
           .eq('user_id', user.id)
-          .eq('show_id', id);
+          .eq('show_id', decodeURIComponent(id!));
 
         if (error) throw error;
 
@@ -76,7 +85,7 @@ const Show = () => {
           .from('watch_history')
           .insert({
             user_id: user.id,
-            show_id: id,
+            show_id: decodeURIComponent(id!),
             show_title: show.Title,
           });
 
