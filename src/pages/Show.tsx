@@ -37,7 +37,7 @@ const Show = () => {
         .select('*')
         .eq('user_id', user.id)
         .eq('show_id', id)
-        .single();
+        .maybeSingle();
       
       setIsInWatchHistory(!!data);
     };

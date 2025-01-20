@@ -1,9 +1,20 @@
-const API_KEY = 'e48b38b2';
+import { supabase } from "@/lib/supabase";
+
+let API_KEY: string | null = null;
 const BASE_URL = 'https://www.omdbapi.com/';
+
+const getApiKey = async () => {
+  if (API_KEY) return API_KEY;
+  
+  const { data: { OMDB_API_KEY } } = await supabase.functions.invoke('get-omdb-key');
+  API_KEY = OMDB_API_KEY;
+  return API_KEY;
+};
 
 export const searchShows = async (query: string) => {
   try {
-    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&s=${encodeURIComponent(query)}&type=series`);
+    const apiKey = await getApiKey();
+    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(query)}&type=series`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -17,7 +28,8 @@ export const searchShows = async (query: string) => {
 
 export const getShowDetails = async (id: string) => {
   try {
-    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&i=${encodeURIComponent(id)}&plot=full`);
+    const apiKey = await getApiKey();
+    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&plot=full`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -31,7 +43,8 @@ export const getShowDetails = async (id: string) => {
 
 export const getShowsByCategory = async (category: string) => {
   try {
-    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&s=${encodeURIComponent(category)}&type=series`);
+    const apiKey = await getApiKey();
+    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(category)}&type=series`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -45,7 +58,8 @@ export const getShowsByCategory = async (category: string) => {
 
 export const getEpisodeDetails = async (id: string, season: string, episode: string) => {
   try {
-    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}&Episode=${encodeURIComponent(episode)}`);
+    const apiKey = await getApiKey();
+    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}&Episode=${encodeURIComponent(episode)}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -59,7 +73,8 @@ export const getEpisodeDetails = async (id: string, season: string, episode: str
 
 export const getSeasonDetails = async (id: string, season: string) => {
   try {
-    const response = await fetch(`${BASE_URL}?apikey=${API_KEY}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}`);
+    const apiKey = await getApiKey();
+    const response = await fetch(`${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
