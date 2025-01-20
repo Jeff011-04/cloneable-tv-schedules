@@ -1,19 +1,12 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getShowDetails, getSeasonDetails } from "@/utils/api";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const Show = () => {
   const { id } = useParams();
@@ -21,6 +14,7 @@ const Show = () => {
   const { toast } = useToast();
   const [selectedSeason, setSelectedSeason] = useState<string>("1");
   const [episodes, setEpisodes] = useState<Array<{ Episode: string; Title: string }>>([]);
+  const [isInWatchHistory, setIsInWatchHistory] = useState(false);
 
   const { data: show, isLoading } = useQuery({
     queryKey: ["show", id],
@@ -33,33 +27,72 @@ const Show = () => {
     enabled: !!id && !!selectedSeason && show?.Type === "series",
   });
 
+  // Check if show is in watch history
+  useEffect(() => {
+    const checkWatchHistory = async () => {
+      if (!user || !id) return;
+      
+      const { data } = await supabase
+        .from('watch_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('show_id', id)
+        .single();
+      
+      setIsInWatchHistory(!!data);
+    };
+
+    checkWatchHistory();
+  }, [user, id]);
+
   useEffect(() => {
     if (seasonEpisodes) {
       setEpisodes(seasonEpisodes);
     }
   }, [seasonEpisodes]);
 
-  const handleWatch = async () => {
+  const handleWatchHistory = async () => {
     if (!user || !show) return;
 
     try {
-      const { error } = await supabase.from('watch_history').insert({
-        user_id: user.id,
-        show_id: id,
-        show_title: show.Title,
-      });
+      if (isInWatchHistory) {
+        // Remove from watch history
+        const { error } = await supabase
+          .from('watch_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('show_id', id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Added to watch history",
-        description: `${show.Title} has been added to your watch history.`,
-      });
+        setIsInWatchHistory(false);
+        toast({
+          title: "Removed from watch history",
+          description: `${show.Title} has been removed from your watch history.`,
+        });
+      } else {
+        // Add to watch history
+        const { error } = await supabase
+          .from('watch_history')
+          .insert({
+            user_id: user.id,
+            show_id: id,
+            show_title: show.Title,
+          });
+
+        if (error) throw error;
+
+        setIsInWatchHistory(true);
+        toast({
+          title: "Added to watch history",
+          description: `${show.Title} has been added to your watch history.`,
+        });
+      }
     } catch (error) {
-      console.error('Error adding to watch history:', error);
+      console.error('Error managing watch history:', error);
       toast({
         title: "Error",
-        description: "Failed to add show to watch history.",
+        description: "Failed to update watch history.",
         variant: "destructive",
       });
     }
@@ -90,8 +123,19 @@ const Show = () => {
             className="w-full rounded-lg shadow-lg"
           />
           {user && (
-            <Button onClick={handleWatch} className="mt-4 w-full">
-              Add to Watch History
+            <Button 
+              onClick={handleWatchHistory} 
+              className="mt-4 w-full"
+              variant={isInWatchHistory ? "secondary" : "default"}
+            >
+              {isInWatchHistory ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Remove from Watch History
+                </>
+              ) : (
+                "Add to Watch History"
+              )}
             </Button>
           )}
         </div>
