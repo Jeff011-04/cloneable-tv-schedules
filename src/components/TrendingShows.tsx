@@ -6,8 +6,9 @@ import { Loader2 } from "lucide-react";
 
 const TrendingShows = () => {
   const categories = [
+    { title: "Popular Shows", search: "breaking bad" },
     { title: "Trending Now", search: "game of thrones" },
-    { title: "Popular Drama Series", search: "breaking bad" },
+    { title: "Popular Drama Series", search: "stranger things" },
     { title: "Must-Watch Documentaries", search: "planet earth" },
   ];
 
