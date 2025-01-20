@@ -26,5 +26,5 @@ enabled = true
 enabled = true
 
 [[functions]]
-name = "get-omdb-key"
+[functions.get-omdb-key]
 verify_jwt = false
