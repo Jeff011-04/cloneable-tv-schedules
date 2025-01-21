@@ -2,29 +2,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search, History } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Success",
-        description: "You have been signed out successfully",
-      });
-      navigate("/login");
-    } catch (error) {
-      console.error('Sign out error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-      });
-    }
+    await signOut();
+    navigate("/login");
   };
 
   return (

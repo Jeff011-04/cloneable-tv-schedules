@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, AuthError, AuthApiError } from '@supabase/supabase-js';
+import { User, AuthError } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -88,15 +88,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        throw error;
+      // Ensure we have a session before attempting to sign out
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session found');
       }
-      // Clear user state after successful sign out
-      setUser(null);
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
-      console.error('Error during sign out:', error);
       if (error instanceof AuthError) {
         throw error;
       }

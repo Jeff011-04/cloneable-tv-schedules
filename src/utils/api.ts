@@ -11,8 +11,7 @@ const getApiKey = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache'
+        'Accept': 'application/json'
       },
       body: JSON.stringify({}) // Add empty body to ensure proper POST request
     });
@@ -34,28 +33,13 @@ const getApiKey = async () => {
   }
 };
 
-const fetchWithRetry = async (url: string, retries = 3, delay = 2000) => {
+const fetchWithRetry = async (url: string, retries = 3, delay = 1000) => {
   for (let i = 0; i < retries; i++) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        },
-        mode: 'cors'
-      });
-
-      clearTimeout(timeoutId);
-
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const data = await response.json();
       if (data.Error) {
         throw new Error(data.Error);
@@ -64,11 +48,7 @@ const fetchWithRetry = async (url: string, retries = 3, delay = 2000) => {
     } catch (error) {
       console.error(`Attempt ${i + 1} failed:`, error);
       if (i === retries - 1) throw error;
-      
-      // Exponential backoff with jitter
-      const jitter = Math.random() * 1000;
-      const waitTime = delay * Math.pow(2, i) + jitter;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
     }
   }
 };
