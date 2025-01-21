@@ -32,34 +32,34 @@ export type Database = {
       }
       watch_history: {
         Row: {
+          episode_number: string | null
+          episode_title: string | null
           id: string
+          season_number: string | null
           show_id: string
           show_title: string
           user_id: string
           watched_at: string
-          season_number: string | null
-          episode_number: string | null
-          episode_title: string | null
         }
         Insert: {
+          episode_number?: string | null
+          episode_title?: string | null
           id?: string
+          season_number?: string | null
           show_id: string
           show_title: string
           user_id: string
           watched_at?: string
-          season_number?: string | null
-          episode_number?: string | null
-          episode_title?: string | null
         }
         Update: {
+          episode_number?: string | null
+          episode_title?: string | null
           id?: string
+          season_number?: string | null
           show_id?: string
           show_title?: string
           user_id?: string
           watched_at?: string
-          season_number?: string | null
-          episode_number?: string | null
-          episode_title?: string | null
         }
         Relationships: [
           {
@@ -128,7 +128,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {

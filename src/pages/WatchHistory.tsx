@@ -7,7 +7,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { getShowDetails } from "@/utils/api";
 
-type WatchHistoryEntry = Tables<"watch_history">;
+type WatchHistoryEntry = Tables<"watch_history", never>;
 
 interface ShowDetails {
   id: string;
