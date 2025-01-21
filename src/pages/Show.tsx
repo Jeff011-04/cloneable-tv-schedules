@@ -13,6 +13,7 @@ const Show = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedSeason, setSelectedSeason] = useState<string>("1");
+  const [selectedEpisode, setSelectedEpisode] = useState<{ Episode: string; Title: string } | null>(null);
   const [episodes, setEpisodes] = useState<Array<{ Episode: string; Title: string }>>([]);
   const [isInWatchHistory, setIsInWatchHistory] = useState(false);
 
@@ -27,7 +28,6 @@ const Show = () => {
     enabled: !!id && !!selectedSeason && show?.Type === "series",
   });
 
-  // Check if show is in watch history
   useEffect(() => {
     const checkWatchHistory = async () => {
       if (!user || !id) return;
@@ -48,6 +48,7 @@ const Show = () => {
   useEffect(() => {
     if (seasonEpisodes) {
       setEpisodes(seasonEpisodes);
+      setSelectedEpisode(null); // Reset selected episode when season changes
     }
   }, [seasonEpisodes]);
 
@@ -71,14 +72,19 @@ const Show = () => {
           description: `${show.Title} has been removed from your watch history.`,
         });
       } else {
-        // Add to watch history
+        // Add to watch history with episode information if it's a series
+        const watchHistoryData = {
+          user_id: user.id,
+          show_id: id,
+          show_title: show.Title,
+          season_number: show.Type === "series" ? selectedSeason : null,
+          episode_number: selectedEpisode?.Episode || null,
+          episode_title: selectedEpisode?.Title || null,
+        };
+
         const { error } = await supabase
           .from('watch_history')
-          .insert({
-            user_id: user.id,
-            show_id: id,
-            show_title: show.Title,
-          });
+          .insert(watchHistoryData);
 
         if (error) throw error;
 
@@ -127,6 +133,7 @@ const Show = () => {
               onClick={handleWatchHistory} 
               className="mt-4 w-full"
               variant={isInWatchHistory ? "secondary" : "default"}
+              disabled={show.Type === "series" && !selectedEpisode}
             >
               {isInWatchHistory ? (
                 <>
@@ -134,7 +141,7 @@ const Show = () => {
                   Remove from Watch History
                 </>
               ) : (
-                "Add to Watch History"
+                `Add to Watch History${show.Type === "series" ? " (Select an episode)" : ""}`
               )}
             </Button>
           )}
@@ -197,7 +204,10 @@ const Show = () => {
                           {episodes.map((episode) => (
                             <div
                               key={episode.Episode}
-                              className="rounded-lg border p-4 hover:bg-accent"
+                              className={`rounded-lg border p-4 hover:bg-accent cursor-pointer ${
+                                selectedEpisode?.Episode === episode.Episode ? 'bg-accent' : ''
+                              }`}
+                              onClick={() => setSelectedEpisode(episode)}
                             >
                               <h3 className="font-medium">
                                 Episode {episode.Episode}: {episode.Title}

@@ -37,6 +37,9 @@ export type Database = {
           show_title: string
           user_id: string
           watched_at: string
+          season_number: string | null
+          episode_number: string | null
+          episode_title: string | null
         }
         Insert: {
           id?: string
@@ -44,6 +47,9 @@ export type Database = {
           show_title: string
           user_id: string
           watched_at?: string
+          season_number?: string | null
+          episode_number?: string | null
+          episode_title?: string | null
         }
         Update: {
           id?: string
@@ -51,6 +57,9 @@ export type Database = {
           show_title?: string
           user_id?: string
           watched_at?: string
+          season_number?: string | null
+          episode_number?: string | null
+          episode_title?: string | null
         }
         Relationships: [
           {
@@ -119,7 +128,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
