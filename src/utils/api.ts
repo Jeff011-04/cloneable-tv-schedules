@@ -11,7 +11,8 @@ const getApiKey = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify({}) // Add empty body to ensure proper POST request
     });
@@ -43,7 +44,8 @@ const fetchWithRetry = async (url: string, retries = 3, delay = 2000) => {
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         },
         mode: 'cors'
       });
