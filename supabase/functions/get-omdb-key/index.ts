@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    // Get the OMDB API key from Supabase secrets
+    console.log('Fetching OMDB API key from environment variables')
     const OMDB_API_KEY = Deno.env.get('OMDB_API_KEY')
     
     if (!OMDB_API_KEY) {
@@ -30,7 +30,7 @@ serve(async (req) => {
       )
     }
 
-    // Return the API key
+    console.log('Successfully retrieved OMDB API key')
     return new Response(
       JSON.stringify({ OMDB_API_KEY }),
       { 
