@@ -10,17 +10,26 @@ const getApiKey = async () => {
     const { data, error } = await supabase.functions.invoke('get-omdb-key', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({}) // Add empty body to ensure proper POST request
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching OMDB API key:', error);
+      throw error;
+    }
+    
+    if (!data || !data.OMDB_API_KEY) {
+      throw new Error('No API key returned from Edge Function');
+    }
     
     API_KEY = data.OMDB_API_KEY;
     return API_KEY;
   } catch (error) {
     console.error('Error fetching OMDB API key:', error);
-    throw error;
+    throw new Error('Failed to fetch API key. Please try again later.');
   }
 };
 
@@ -39,7 +48,6 @@ const fetchWithRetry = async (url: string, retries = 3, delay = 1000) => {
     } catch (error) {
       console.error(`Attempt ${i + 1} failed:`, error);
       if (i === retries - 1) throw error;
-      // Exponential backoff: wait longer between each retry
       await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
     }
   }
