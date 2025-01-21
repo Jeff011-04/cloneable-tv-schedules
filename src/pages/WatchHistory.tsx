@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { getShowDetails } from "@/utils/api";
+import { useToast } from "@/components/ui/use-toast";
 
 type WatchHistoryEntry = Tables<"watch_history", never>;
 
@@ -21,27 +22,43 @@ const WatchHistory = () => {
   const { user } = useAuth();
   const [watchHistory, setWatchHistory] = useState<WatchHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchWatchHistory = async () => {
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from('watch_history')
-        .select('*')
-        .eq('user_id', user.id);
+      try {
+        const { data, error } = await supabase
+          .from('watch_history')
+          .select('*')
+          .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching watch history:', error);
-        return;
+        if (error) {
+          console.error('Error fetching watch history:', error);
+          toast({
+            title: "Error",
+            description: "Failed to fetch watch history. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setWatchHistory(data || []);
+      } catch (error) {
+        console.error('Error in watch history:', error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
-
-      setWatchHistory(data || []);
-      setLoading(false);
     };
 
     fetchWatchHistory();
-  }, [user]);
+  }, [user, toast]);
 
   if (loading) {
     return (

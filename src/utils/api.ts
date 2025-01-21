@@ -7,7 +7,13 @@ const getApiKey = async () => {
   if (API_KEY) return API_KEY;
   
   try {
-    const { data, error } = await supabase.functions.invoke('get-omdb-key');
+    const { data, error } = await supabase.functions.invoke('get-omdb-key', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
     if (error) throw error;
     
     API_KEY = data.OMDB_API_KEY;
@@ -31,6 +37,7 @@ const fetchWithRetry = async (url: string, retries = 3) => {
       }
       return data;
     } catch (error) {
+      console.error(`Attempt ${i + 1} failed:`, error);
       if (i === retries - 1) throw error;
       // Exponential backoff: wait longer between each retry
       await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
