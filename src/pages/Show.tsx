@@ -18,6 +18,7 @@ const Show = () => {
   const [episodes, setEpisodes] = useState<Array<{ Episode: string; Title: string }>>([]);
   const [isInWatchHistory, setIsInWatchHistory] = useState(false);
   const [watchedEpisodes, setWatchedEpisodes] = useState<Set<string>>(new Set());
+  const [isAllEpisodesSelected, setIsAllEpisodesSelected] = useState(false);
 
   const { data: show, isLoading } = useQuery({
     queryKey: ["show", id],
@@ -42,7 +43,6 @@ const Show = () => {
       
       if (data && data.length > 0) {
         setIsInWatchHistory(true);
-        // Create a set of watched episodes
         const watched = new Set(data.map(entry => `${entry.season_number}-${entry.episode_number}`));
         setWatchedEpisodes(watched);
       } else {
@@ -58,8 +58,14 @@ const Show = () => {
     if (seasonEpisodes) {
       setEpisodes(seasonEpisodes);
       setSelectedEpisode(null);
+      
+      // Check if all episodes in the current season are watched
+      const allEpisodesWatched = seasonEpisodes.every(episode => 
+        watchedEpisodes.has(`${selectedSeason}-${episode.Episode}`)
+      );
+      setIsAllEpisodesSelected(allEpisodesWatched);
     }
-  }, [seasonEpisodes]);
+  }, [seasonEpisodes, watchedEpisodes, selectedSeason]);
 
   const handleEpisodeToggle = async (episode: { Episode: string; Title: string }) => {
     if (!user || !show) return;
@@ -69,7 +75,6 @@ const Show = () => {
 
     try {
       if (isWatched) {
-        // Remove from watch history
         const { error } = await supabase
           .from('watch_history')
           .delete()
@@ -89,7 +94,6 @@ const Show = () => {
           description: `${show.Title} S${selectedSeason}E${episode.Episode} has been removed from your watch history.`,
         });
       } else {
-        // Add to watch history
         const watchHistoryData = {
           user_id: user.id,
           show_id: id,
@@ -114,6 +118,70 @@ const Show = () => {
           description: `${show.Title} S${selectedSeason}E${episode.Episode} has been added to your watch history.`,
         });
       }
+    } catch (error) {
+      console.error('Error managing watch history:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update watch history.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSelectAllEpisodes = async (checked: boolean) => {
+    if (!user || !show || !episodes.length) return;
+
+    try {
+      if (checked) {
+        // Add all episodes to watch history
+        const watchHistoryData = episodes.map(episode => ({
+          user_id: user.id,
+          show_id: id,
+          show_title: show.Title,
+          season_number: selectedSeason,
+          episode_number: episode.Episode,
+          episode_title: episode.Title,
+        }));
+
+        const { error } = await supabase
+          .from('watch_history')
+          .insert(watchHistoryData);
+
+        if (error) throw error;
+
+        const newWatchedEpisodes = new Set(watchedEpisodes);
+        episodes.forEach(episode => {
+          newWatchedEpisodes.add(`${selectedSeason}-${episode.Episode}`);
+        });
+        setWatchedEpisodes(newWatchedEpisodes);
+
+        toast({
+          title: "All episodes marked as watched",
+          description: `All episodes of ${show.Title} Season ${selectedSeason} have been added to your watch history.`,
+        });
+      } else {
+        // Remove all episodes from watch history
+        const { error } = await supabase
+          .from('watch_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('show_id', id)
+          .eq('season_number', selectedSeason);
+
+        if (error) throw error;
+
+        const newWatchedEpisodes = new Set(watchedEpisodes);
+        episodes.forEach(episode => {
+          newWatchedEpisodes.delete(`${selectedSeason}-${episode.Episode}`);
+        });
+        setWatchedEpisodes(newWatchedEpisodes);
+
+        toast({
+          title: "All episodes unmarked",
+          description: `All episodes of ${show.Title} Season ${selectedSeason} have been removed from your watch history.`,
+        });
+      }
+      setIsAllEpisodesSelected(checked);
     } catch (error) {
       console.error('Error managing watch history:', error);
       toast({
@@ -202,7 +270,21 @@ const Show = () => {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <h2 className="font-semibold">Episodes</h2>
+                        <div className="flex items-center justify-between">
+                          <h2 className="font-semibold">Episodes</h2>
+                          {user && episodes.length > 0 && (
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={isAllEpisodesSelected}
+                                onCheckedChange={handleSelectAllEpisodes}
+                                className="h-5 w-5"
+                              />
+                              <span className="text-sm text-muted-foreground">
+                                {isAllEpisodesSelected ? 'Unmark all as watched' : 'Mark all as watched'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                         <div className="space-y-2">
                           {episodes.map((episode) => (
                             <div
