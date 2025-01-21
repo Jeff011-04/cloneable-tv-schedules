@@ -25,10 +25,15 @@ const fetchWithRetry = async (url: string, retries = 3) => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return await response.json();
+      const data = await response.json();
+      if (data.Error) {
+        throw new Error(data.Error);
+      }
+      return data;
     } catch (error) {
       if (i === retries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+      // Exponential backoff: wait longer between each retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
     }
   }
 };
@@ -49,11 +54,7 @@ export const getShowDetails = async (id: string) => {
   try {
     const apiKey = await getApiKey();
     const url = `${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&plot=full`;
-    const data = await fetchWithRetry(url);
-    if (data.Error) {
-      throw new Error(data.Error);
-    }
-    return data;
+    return await fetchWithRetry(url);
   } catch (error) {
     console.error('Error getting show details:', error);
     throw error;
@@ -76,11 +77,7 @@ export const getEpisodeDetails = async (id: string, season: string, episode: str
   try {
     const apiKey = await getApiKey();
     const url = `${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}&Episode=${encodeURIComponent(episode)}`;
-    const data = await fetchWithRetry(url);
-    if (data.Error) {
-      throw new Error(data.Error);
-    }
-    return data;
+    return await fetchWithRetry(url);
   } catch (error) {
     console.error('Error getting episode details:', error);
     throw error;
@@ -92,9 +89,6 @@ export const getSeasonDetails = async (id: string, season: string) => {
     const apiKey = await getApiKey();
     const url = `${BASE_URL}?apikey=${apiKey}&i=${encodeURIComponent(id)}&Season=${encodeURIComponent(season)}`;
     const data = await fetchWithRetry(url);
-    if (data.Error) {
-      throw new Error(data.Error);
-    }
     return data.Episodes || [];
   } catch (error) {
     console.error('Error getting season details:', error);
