@@ -18,9 +18,17 @@ interface ShowDetails {
   year: string;
 }
 
+interface GroupedWatchHistory {
+  [showId: string]: {
+    showId: string;
+    showTitle: string;
+    episodes: WatchHistoryEntry[];
+  };
+}
+
 const WatchHistory = () => {
   const { user } = useAuth();
-  const [watchHistory, setWatchHistory] = useState<WatchHistoryEntry[]>([]);
+  const [watchHistory, setWatchHistory] = useState<GroupedWatchHistory>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -32,7 +40,8 @@ const WatchHistory = () => {
         const { data, error } = await supabase
           .from('watch_history')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .order('watched_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching watch history:', error);
@@ -44,7 +53,20 @@ const WatchHistory = () => {
           return;
         }
 
-        setWatchHistory(data || []);
+        // Group entries by show_id
+        const grouped = (data || []).reduce<GroupedWatchHistory>((acc, entry) => {
+          if (!acc[entry.show_id]) {
+            acc[entry.show_id] = {
+              showId: entry.show_id,
+              showTitle: entry.show_title,
+              episodes: [],
+            };
+          }
+          acc[entry.show_id].episodes.push(entry);
+          return acc;
+        }, {});
+
+        setWatchHistory(grouped);
       } catch (error) {
         console.error('Error in watch history:', error);
         toast({
@@ -72,8 +94,8 @@ const WatchHistory = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-8 text-3xl font-bold">Watch History</h1>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {watchHistory.map((entry) => (
-          <WatchHistoryCard key={entry.id} showId={entry.show_id} title={entry.show_title} />
+        {Object.values(watchHistory).map(({ showId, showTitle }) => (
+          <WatchHistoryCard key={showId} showId={showId} title={showTitle} />
         ))}
       </div>
     </div>
