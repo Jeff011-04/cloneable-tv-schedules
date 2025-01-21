@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getShowDetails, getSeasonDetails } from "@/utils/api";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ const Show = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<{ Episode: string; Title: string } | null>(null);
   const [episodes, setEpisodes] = useState<Array<{ Episode: string; Title: string }>>([]);
   const [isInWatchHistory, setIsInWatchHistory] = useState(false);
+  const [watchedEpisodes, setWatchedEpisodes] = useState<Set<string>>(new Set());
 
   const { data: show, isLoading } = useQuery({
     queryKey: ["show", id],
@@ -29,57 +31,72 @@ const Show = () => {
   });
 
   useEffect(() => {
-    const checkWatchHistory = async () => {
+    const fetchWatchHistory = async () => {
       if (!user || !id) return;
       
       const { data } = await supabase
         .from('watch_history')
         .select('*')
         .eq('user_id', user.id)
-        .eq('show_id', id)
-        .maybeSingle();
+        .eq('show_id', id);
       
-      setIsInWatchHistory(!!data);
+      if (data && data.length > 0) {
+        setIsInWatchHistory(true);
+        // Create a set of watched episodes
+        const watched = new Set(data.map(entry => `${entry.season_number}-${entry.episode_number}`));
+        setWatchedEpisodes(watched);
+      } else {
+        setIsInWatchHistory(false);
+        setWatchedEpisodes(new Set());
+      }
     };
 
-    checkWatchHistory();
+    fetchWatchHistory();
   }, [user, id]);
 
   useEffect(() => {
     if (seasonEpisodes) {
       setEpisodes(seasonEpisodes);
-      setSelectedEpisode(null); // Reset selected episode when season changes
+      setSelectedEpisode(null);
     }
   }, [seasonEpisodes]);
 
-  const handleWatchHistory = async () => {
+  const handleEpisodeToggle = async (episode: { Episode: string; Title: string }) => {
     if (!user || !show) return;
 
+    const episodeKey = `${selectedSeason}-${episode.Episode}`;
+    const isWatched = watchedEpisodes.has(episodeKey);
+
     try {
-      if (isInWatchHistory) {
+      if (isWatched) {
         // Remove from watch history
         const { error } = await supabase
           .from('watch_history')
           .delete()
           .eq('user_id', user.id)
-          .eq('show_id', id);
+          .eq('show_id', id)
+          .eq('season_number', selectedSeason)
+          .eq('episode_number', episode.Episode);
 
         if (error) throw error;
 
-        setIsInWatchHistory(false);
+        const newWatchedEpisodes = new Set(watchedEpisodes);
+        newWatchedEpisodes.delete(episodeKey);
+        setWatchedEpisodes(newWatchedEpisodes);
+
         toast({
-          title: "Removed from watch history",
-          description: `${show.Title} has been removed from your watch history.`,
+          title: "Episode removed from watch history",
+          description: `${show.Title} S${selectedSeason}E${episode.Episode} has been removed from your watch history.`,
         });
       } else {
-        // Add to watch history with episode information if it's a series
+        // Add to watch history
         const watchHistoryData = {
           user_id: user.id,
           show_id: id,
           show_title: show.Title,
-          season_number: show.Type === "series" ? selectedSeason : null,
-          episode_number: selectedEpisode?.Episode || null,
-          episode_title: selectedEpisode?.Title || null,
+          season_number: selectedSeason,
+          episode_number: episode.Episode,
+          episode_title: episode.Title,
         };
 
         const { error } = await supabase
@@ -88,10 +105,13 @@ const Show = () => {
 
         if (error) throw error;
 
-        setIsInWatchHistory(true);
+        const newWatchedEpisodes = new Set(watchedEpisodes);
+        newWatchedEpisodes.add(episodeKey);
+        setWatchedEpisodes(newWatchedEpisodes);
+
         toast({
-          title: "Added to watch history",
-          description: `${show.Title} has been added to your watch history.`,
+          title: "Episode added to watch history",
+          description: `${show.Title} S${selectedSeason}E${episode.Episode} has been added to your watch history.`,
         });
       }
     } catch (error) {
@@ -128,23 +148,6 @@ const Show = () => {
             alt={show.Title}
             className="w-full rounded-lg shadow-lg"
           />
-          {user && (
-            <Button 
-              onClick={handleWatchHistory} 
-              className="mt-4 w-full"
-              variant={isInWatchHistory ? "secondary" : "default"}
-              disabled={show.Type === "series" && !selectedEpisode}
-            >
-              {isInWatchHistory ? (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Remove from Watch History
-                </>
-              ) : (
-                `Add to Watch History${show.Type === "series" ? " (Select an episode)" : ""}`
-              )}
-            </Button>
-          )}
         </div>
         <div>
           <h1 className="text-4xl font-bold">{show.Title}</h1>
@@ -207,11 +210,24 @@ const Show = () => {
                               className={`rounded-lg border p-4 hover:bg-accent cursor-pointer ${
                                 selectedEpisode?.Episode === episode.Episode ? 'bg-accent' : ''
                               }`}
-                              onClick={() => setSelectedEpisode(episode)}
                             >
-                              <h3 className="font-medium">
-                                Episode {episode.Episode}: {episode.Title}
-                              </h3>
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-medium">
+                                  Episode {episode.Episode}: {episode.Title}
+                                </h3>
+                                {user && (
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      checked={watchedEpisodes.has(`${selectedSeason}-${episode.Episode}`)}
+                                      onCheckedChange={() => handleEpisodeToggle(episode)}
+                                      className="h-5 w-5"
+                                    />
+                                    <span className="text-sm text-muted-foreground">
+                                      {watchedEpisodes.has(`${selectedSeason}-${episode.Episode}`) ? 'Watched' : 'Mark as watched'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
