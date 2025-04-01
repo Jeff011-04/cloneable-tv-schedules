@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import HeroSection from "@/components/HeroSection";
 import TrendingShows from "@/components/TrendingShows";
@@ -5,16 +6,12 @@ import { getShowDetails } from "@/utils/api";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
 
-const FEATURED_SHOWS = ["tt0108778", "tt0944947", "tt0903747"]; // Friends, Game of Thrones, Breaking Bad
+// Updated to more recent popular shows
+const FEATURED_SHOWS = ["tt13443470", "tt7660850", "tt5834204"]; // The Last of Us, Succession, Ted Lasso
 
 const Index = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [currentShowIndex, setCurrentShowIndex] = useState(0);
 
   const { data: currentShow, isLoading } = useQuery({
@@ -29,30 +26,6 @@ const Index = () => {
 
     return () => clearInterval(interval);
   }, []);
-
-  // const handleDeleteAccount = async () => {
-  //   try {
-  //     const { error } = await supabase
-  //       .from('profiles')
-  //       .update({ is_deleted: true })
-  //       .eq('id', user?.id);
-
-  //     if (error) throw error;
-
-  //     await supabase.auth.signOut();
-  //     navigate('/login');
-  //     toast({
-  //       title: "Account deleted",
-  //       description: "Your account has been successfully deleted.",
-  //     });
-  //   } catch (error) {
-  //     toast({
-  //       variant: "destructive",
-  //       title: "Error",
-  //       description: "Failed to delete account. Please try again.",
-  //     });
-  //   }
-  // };
 
   if (isLoading) {
     return (
@@ -70,16 +43,6 @@ const Index = () => {
             <h2 className="text-2xl font-semibold">
               Welcome back, {user.user_metadata.name || 'User'}!
             </h2>
-            {/* 
-              <Button 
-                variant="destructive" 
-                onClick={handleDeleteAccount}
-                className="ml-4"
-              >
-                Delete Account
-              </Button> 
-              */}
-
           </div>
         </div>
       )}
