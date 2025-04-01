@@ -1,22 +1,17 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import ShowCard from "@/components/ShowCard";
+import RecommendedShows from "@/components/RecommendedShows";
 import { Loader2 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { getShowDetails } from "@/utils/api";
 import { useToast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
 
 type WatchHistoryEntry = Tables<"watch_history", never>;
-
-interface ShowDetails {
-  id: string;
-  title: string;
-  image: string;
-  rating: string;
-  year: string;
-}
 
 interface GroupedWatchHistory {
   [showId: string]: {
@@ -90,14 +85,38 @@ const WatchHistory = () => {
     );
   }
 
+  const watchedShowTitles = Object.values(watchHistory).map(({ showTitle }) => showTitle);
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold">Watch History</h1>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {Object.values(watchHistory).map(({ showId, showTitle }) => (
-          <WatchHistoryCard key={showId} showId={showId} title={showTitle} />
-        ))}
+      <div className="space-y-2 mb-8">
+        <h1 className="text-4xl font-bold text-gradient">Watch History</h1>
+        <Separator className="h-1 w-24 rounded bg-gradient-to-r from-purple-500 to-indigo-600" />
       </div>
+
+      {Object.keys(watchHistory).length > 0 ? (
+        <>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {Object.values(watchHistory).map(({ showId, showTitle }) => (
+              <WatchHistoryCard key={showId} showId={showId} title={showTitle} />
+            ))}
+          </div>
+
+          <div className="mt-16 space-y-4">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-gradient">Recommended For You</h2>
+              <Separator className="h-1 w-24 rounded bg-gradient-to-r from-pink-500 to-purple-600" />
+              <p className="text-muted-foreground">Based on your watch history</p>
+            </div>
+            <RecommendedShows watchedShows={Object.keys(watchHistory)} />
+          </div>
+        </>
+      ) : (
+        <div className="mt-8 p-6 rounded-lg glass-card text-center">
+          <p className="text-xl">You haven't watched any shows yet.</p>
+          <p className="mt-2 text-muted-foreground">Start watching to build your history and get personalized recommendations.</p>
+        </div>
+      )}
     </div>
   );
 };
