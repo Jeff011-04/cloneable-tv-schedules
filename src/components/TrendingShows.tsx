@@ -28,14 +28,16 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
   const { data: shows, isLoading, error } = useQuery({
     queryKey: ["shows", search],
     queryFn: () => getShowsByCategory(search),
-    onError: (error) => {
-      console.error(`Error fetching ${search} shows:`, error);
-      toast({
-        title: "Error loading shows",
-        description: "We couldn't load the latest shows. Please try again later.",
-        variant: "destructive",
-      });
-    },
+    meta: {
+      onError: (error: Error) => {
+        console.error(`Error fetching ${search} shows:`, error);
+        toast({
+          title: "Error loading shows",
+          description: "We couldn't load the latest shows. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    }
   });
 
   if (isLoading) {

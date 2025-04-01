@@ -6,6 +6,7 @@ import { getShowDetails } from "@/utils/api";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 // Updated to more recent popular shows
 const FEATURED_SHOWS = ["tt13443470", "tt7660850", "tt5834204"]; // The Last of Us, Succession, Ted Lasso
@@ -14,9 +15,11 @@ const Index = () => {
   const { user } = useAuth();
   const [currentShowIndex, setCurrentShowIndex] = useState(0);
 
-  const { data: currentShow, isLoading } = useQuery({
+  const { data: currentShow, isLoading, error } = useQuery({
     queryKey: ["show", FEATURED_SHOWS[currentShowIndex]],
     queryFn: () => getShowDetails(FEATURED_SHOWS[currentShowIndex]),
+    retry: 3,
+    retryDelay: (attempt) => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000),
   });
 
   useEffect(() => {
@@ -26,6 +29,18 @@ const Index = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Show error toast if there's an issue
+  useEffect(() => {
+    if (error) {
+      console.error("Error loading featured show:", error);
+      toast({
+        title: "Couldn't load featured show",
+        description: "There was an issue loading the featured content. We'll try again later.",
+        variant: "destructive",
+      });
+    }
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -47,8 +62,8 @@ const Index = () => {
         </div>
       )}
       <HeroSection
-        title={currentShow?.Title || "Loading..."}
-        description={currentShow?.Plot || "Loading..."}
+        title={currentShow?.Title || "Welcome to TV Lists"}
+        description={currentShow?.Plot || "Discover and track your favorite TV shows"}
         backgroundImage={currentShow?.Poster || "https://placehold.co/1920x1080"}
       />
       <TrendingShows />
