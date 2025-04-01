@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 
@@ -89,9 +90,27 @@ const fetchWithRetry = async (url: string, retries = 3, delay = 1000) => {
 
 export const searchShows = async (query: string) => {
   try {
+    // Check if the query is potentially an IMDb ID
+    const isImdbId = query.startsWith('tt') && /^tt\d+$/.test(query);
+    
     const apiKey = await getApiKey();
-    const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(query)}&type=series`;
-    const data = await fetchWithRetry(url);
+    
+    // If it looks like an IMDb ID, try to get the show details first
+    if (isImdbId) {
+      try {
+        const show = await getShowDetails(query);
+        // If it's a valid show, return it as an array with one item
+        return [show];
+      } catch (error) {
+        console.log("Not a valid IMDb ID, falling back to regular search");
+        // If it fails, fall back to regular search
+      }
+    }
+    
+    // For regular search or fallback
+    const searchUrl = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(query)}&type=series`;
+    
+    const data = await fetchWithRetry(searchUrl);
     return data.Search || [];
   } catch (error) {
     console.error('Error searching shows:', error);

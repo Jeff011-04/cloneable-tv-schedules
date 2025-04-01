@@ -5,7 +5,6 @@ import { searchShows } from "@/utils/api";
 import ShowCard from "@/components/ShowCard";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
 
 interface RecommendedShowsProps {
   watchedShows: string[];
@@ -17,22 +16,18 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
 
   // Function to generate search terms based on watched shows
   const generateSearchTerms = (showTitles: string[]) => {
-    // Extract meaningful keywords from show titles
-    const keywords = showTitles
-      .flatMap(title => title.split(/\s+/))
-      .filter(word => word.length > 3)
-      .filter(word => !['the', 'and', 'season', 'show'].includes(word.toLowerCase()));
+    // We need to search for similar shows, not by IMDb IDs
+    // Let's use some generic terms for popular genres
+    const popularGenres = ["drama", "comedy", "thriller", "fantasy", "sci-fi"];
     
-    // If we have enough keywords, use random selection of them
-    if (keywords.length > 2) {
-      const randomKeywords = [...new Set(keywords)]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3);
-      return randomKeywords.join(' ');
+    // If we have no watch history, return a random genre
+    if (showTitles.length === 0) {
+      const randomGenre = popularGenres[Math.floor(Math.random() * popularGenres.length)];
+      return `popular ${randomGenre} series`;
     }
     
-    // Fallback to the first show title if not enough keywords
-    return showTitles[0] || "popular shows";
+    // For simplicity, we'll use "popular shows" as a fallback
+    return "popular television series";
   };
 
   // Use React Query to fetch recommendations
@@ -40,7 +35,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   const { data, isLoading: queryLoading, error } = useQuery({
     queryKey: ['recommendations', searchTerm],
     queryFn: () => searchShows(searchTerm),
-    enabled: watchedShows.length > 0,
+    enabled: true, // Always enabled since we'll search for popular shows if no watch history
     meta: {
       onError: (error: Error) => {
         console.error('Error fetching recommendations:', error);
