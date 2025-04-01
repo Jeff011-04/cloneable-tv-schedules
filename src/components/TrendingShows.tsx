@@ -8,23 +8,33 @@ import { toast } from "@/components/ui/use-toast";
 
 const TrendingShows = () => {
   const categories = [
-    { title: "Popular Shows", search: "stranger things" },
-    { title: "Trending Now", search: "the last of us" },
-    { title: "Drama Series", search: "succession" },
-    { title: "Popular Sci-Fi", search: "foundation" },
-    { title: "Comedy Series", search: "ted lasso" },
+    { title: "Popular Shows", search: "stranger things", color: "from-purple-500 to-indigo-600" },
+    { title: "Trending Now", search: "the last of us", color: "from-pink-500 to-purple-600" },
+    { title: "Drama Series", search: "succession", color: "from-indigo-500 to-blue-600" },
+    { title: "Popular Sci-Fi", search: "foundation", color: "from-blue-500 to-cyan-600" },
+    { title: "Comedy Series", search: "ted lasso", color: "from-violet-500 to-fuchsia-600" },
   ];
 
   return (
-    <div className="space-y-12 px-6 py-12 lg:px-12">
-      {categories.map((category) => (
-        <CategorySection key={category.title} {...category} />
+    <div className="space-y-16 px-6 py-16 lg:px-12">
+      {categories.map((category, index) => (
+        <CategorySection key={category.title} {...category} index={index} />
       ))}
     </div>
   );
 };
 
-const CategorySection = ({ title, search }: { title: string; search: string }) => {
+const CategorySection = ({ 
+  title, 
+  search, 
+  color, 
+  index 
+}: { 
+  title: string; 
+  search: string; 
+  color: string;
+  index: number;
+}) => {
   const { data: shows, isLoading, error } = useQuery({
     queryKey: ["shows", search],
     queryFn: () => getShowsByCategory(search),
@@ -43,7 +53,7 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
       </div>
     );
   }
@@ -55,7 +65,7 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
           <h2 className="text-2xl font-semibold">{title}</h2>
           <Separator className="bg-gray-800" />
         </div>
-        <div className="rounded-md bg-red-50 p-4 text-red-800">
+        <div className="rounded-md bg-red-950/50 p-4 text-red-200 border border-red-800/50">
           Unable to load shows. Please try again later.
         </div>
       </section>
@@ -66,14 +76,16 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
     return null;
   }
 
+  const animationDelay = index * 0.1;
+
   return (
-    <section className="space-y-6">
+    <section className="space-y-8 opacity-0 animate-fade-up" style={{ animationDelay: `${animationDelay}s`, animationFillMode: 'forwards' }}>
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">{title}</h2>
-        <Separator className="bg-gray-800" />
+        <h2 className={`text-3xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent`}>{title}</h2>
+        <Separator className={`h-1 w-24 rounded bg-gradient-to-r ${color}`} />
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {shows.map((show: any, index: number) => (
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {shows.map((show: any, idx: number) => (
           <ShowCard
             key={show.imdbID}
             id={show.imdbID}
@@ -81,9 +93,10 @@ const CategorySection = ({ title, search }: { title: string; search: string }) =
             image={show.Poster}
             rating="N/A"
             year={show.Year}
-            className="animate-fade-up"
+            className="opacity-0 animate-fade-up"
             style={{
-              animationDelay: `${index * 100}ms`,
+              animationDelay: `${idx * 0.05 + 0.3}s`,
+              animationFillMode: 'forwards',
             }}
           />
         ))}

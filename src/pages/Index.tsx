@@ -45,7 +45,7 @@ const Index = () => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
       </div>
     );
   }
@@ -53,10 +53,10 @@ const Index = () => {
   return (
     <main className="min-h-screen bg-background text-foreground">
       {user && (
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">
-              Welcome back, {user.user_metadata.name || 'User'}!
+        <div className="container mx-auto px-4 py-6 opacity-0 animate-fade-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+          <div className="glass-card rounded-xl p-6 flex items-center justify-between">
+            <h2 className="text-2xl font-bold">
+              Welcome back, <span className="text-gradient">{user.user_metadata.name || 'User'}</span>!
             </h2>
           </div>
         </div>
