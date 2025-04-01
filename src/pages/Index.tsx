@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
 
 // Updated to more recent popular shows
 const FEATURED_SHOWS = ["tt13443470", "tt7660850", "tt5834204"]; // The Last of Us, Succession, Ted Lasso
@@ -45,7 +46,8 @@ const Index = () => {
           .eq('user_id', user.id);
         
         if (data) {
-          const showIds = [...new Set(data.map(item => item.show_id))];
+          // Fix type issue by properly casting the data
+          const showIds = [...new Set(data.map(item => item.show_id as string))];
           setWatchedShowIds(showIds);
         }
       } catch (error) {
