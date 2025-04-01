@@ -5,6 +5,7 @@ import { searchShows } from "@/utils/api";
 import ShowCard from "@/components/ShowCard";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface RecommendedShowsProps {
   watchedShows: string[];
@@ -92,7 +93,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   }
 
   return (
-    <div className="mt-8 space-y-4">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {recommendedShows.map((show: any, index: number) => (
           <ShowCard
