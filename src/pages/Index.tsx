@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import HeroSection from "@/components/HeroSection";
 import TrendingShows from "@/components/TrendingShows";
 import RecommendedShows from "@/components/RecommendedShows";
-import { getShowDetails } from "@/utils/api";
-import { Loader2 } from "lucide-react";
+import { getShowDetails, getLatestShows } from "@/utils/api";
+import { Loader2, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
 import ShowCard from "@/components/ShowCard";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import LatestShows from "@/components/LatestShows";
 
 // Updated to more recent popular shows
 const FEATURED_SHOWS = ["tt13443470", "tt7660850", "tt5834204"]; // The Last of Us, Succession, Ted Lasso
@@ -21,6 +22,7 @@ const Index = () => {
   const [currentShowIndex, setCurrentShowIndex] = useState(0);
   const [watchedShowIds, setWatchedShowIds] = useState<string[]>([]);
   const [latestShow, setLatestShow] = useState<any>(null);
+  const [hasWatchedEpisodes, setHasWatchedEpisodes] = useState(false);
 
   const { data: currentShow, isLoading, error } = useQuery({
     queryKey: ["show", FEATURED_SHOWS[currentShowIndex]],
@@ -45,7 +47,7 @@ const Index = () => {
       try {
         const { data } = await supabase
           .from('watch_history')
-          .select('show_id, show_title, watched_at')
+          .select('show_id, show_title, watched_at, episode_number, season_number')
           .eq('user_id', user.id)
           .order('watched_at', { ascending: false });
         
@@ -56,13 +58,19 @@ const Index = () => {
           
           // Set the latest watched show
           const latest = data[0];
+          
+          // Check if there are any episodes with season and episode info
+          const hasEpisodes = data.some(item => item.episode_number || item.season_number);
+          setHasWatchedEpisodes(hasEpisodes);
+          
           if (latest) {
             const showDetails = await getShowDetails(latest.show_id);
             setLatestShow({
               id: latest.show_id,
               title: latest.show_title,
               details: showDetails,
-              watchedAt: new Date(latest.watched_at)
+              watchedAt: new Date(latest.watched_at),
+              hasEpisodeData: latest.episode_number || latest.season_number
             });
           }
         }
@@ -113,8 +121,8 @@ const Index = () => {
         backgroundImage={currentShow?.Poster || "https://placehold.co/1920x1080"}
       />
       
-      {/* Latest watched show section */}
-      {user && latestShow && (
+      {/* Latest watched show section - only show if there's episode data */}
+      {user && latestShow && hasWatchedEpisodes && (
         <div className="container mx-auto px-4 py-10 opacity-0 animate-fade-up" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
           <div className="space-y-2 mb-6">
             <h2 className="text-3xl font-bold text-gradient">Continue Watching</h2>
@@ -158,6 +166,18 @@ const Index = () => {
           </div>
         </div>
       )}
+      
+      {/* Latest shows section */}
+      <div className="container mx-auto px-4 py-10 opacity-0 animate-fade-up" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
+        <div className="space-y-2 mb-6">
+          <h2 className="text-3xl font-bold text-gradient">Latest Shows</h2>
+          <Separator className="h-1 w-24 rounded bg-gradient-to-r from-yellow-500 to-orange-600" />
+          <p className="text-muted-foreground">
+            New and recent releases
+          </p>
+        </div>
+        <LatestShows />
+      </div>
       
       {/* Recommended shows section (only for logged-in users) */}
       {user && watchedShowIds.length > 0 && (

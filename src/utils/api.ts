@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 
@@ -173,5 +172,51 @@ export const getSeasonDetails = async (id: string, season: string) => {
   } catch (error) {
     console.error('Error getting season details:', error);
     throw error;
+  }
+};
+
+export const getLatestShows = async (year: string = "", month: string = "") => {
+  try {
+    const apiKey = await getApiKey();
+    
+    // If year and month are provided, search for shows from that time period
+    // Otherwise, use a default search for recent shows
+    let searchTerm;
+    
+    if (year && month) {
+      // Format month to ensure it's two digits
+      const formattedMonth = month.padStart(2, '0');
+      searchTerm = `y:${year}/${formattedMonth}`;
+    } else if (year) {
+      searchTerm = `y:${year}`;
+    } else {
+      // Default to current year's shows
+      const currentDate = new Date();
+      searchTerm = `y:${currentDate.getFullYear()}`;
+    }
+    
+    const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(searchTerm)}&type=series`;
+    console.log("Searching for latest shows with URL:", url);
+    
+    const data = await fetchWithRetry(url);
+    
+    if (data.Error) {
+      console.error("OMDB API returned an error:", data.Error);
+      // If the specific year/month search fails, fall back to a more general search
+      const fallbackUrl = `${BASE_URL}?apikey=${apiKey}&s=new&type=series`;
+      console.log("Falling back to:", fallbackUrl);
+      const fallbackData = await fetchWithRetry(fallbackUrl);
+      return fallbackData.Search || [];
+    }
+    
+    return data.Search || [];
+  } catch (error) {
+    console.error('Error getting latest shows:', error);
+    toast({
+      title: "Error loading latest shows",
+      description: "We couldn't load the latest shows. Please try again later.",
+      variant: "destructive",
+    });
+    return []; 
   }
 };
