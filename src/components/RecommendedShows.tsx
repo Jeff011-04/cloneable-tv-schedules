@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchShows } from "@/utils/api";
+import { searchShows, getShowDetails } from "@/utils/api";
 import ShowCard from "@/components/ShowCard";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
@@ -14,9 +14,10 @@ interface RecommendedShowsProps {
 const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   const [recommendedShows, setRecommendedShows] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [genreBasedQuery, setGenreBasedQuery] = useState<string | null>(null);
 
-  // Function to generate search terms based on watched shows
-  const generateSearchTerms = (showTitles: string[]) => {
+  // Function to generate search terms based on watched shows and their genres
+  const generateSearchTerms = async (showIds: string[]) => {
     // Define popular genres and shows for recommendations
     const popularShows = [
       "stranger things",
@@ -27,25 +28,49 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
     ];
     
     // If we have no watch history, return a random popular show
-    if (showTitles.length === 0) {
+    if (showIds.length === 0) {
       const randomIndex = Math.floor(Math.random() * popularShows.length);
       console.log("No watch history, using random show:", popularShows[randomIndex]);
       return popularShows[randomIndex];
     }
     
-    // If we have watch history, use the first popular show as fallback
-    // In a real app, we might use more sophisticated recommendation algorithm
+    try {
+      // Try to get genre information from the first watched show
+      const showDetails = await getShowDetails(showIds[0]);
+      if (showDetails && showDetails.Genre) {
+        // Extract the first genre from the comma-separated list
+        const genres = showDetails.Genre.split(',').map((g: string) => g.trim());
+        const primaryGenre = genres[0];
+        console.log(`Found genre for recommendations: ${primaryGenre}`);
+        
+        // Return the genre as search term for more relevant recommendations
+        setGenreBasedQuery(primaryGenre);
+        return primaryGenre;
+      }
+    } catch (error) {
+      console.error("Error fetching show details for recommendations:", error);
+    }
+    
+    // Fallback to first popular show if we can't get genre information
     return popularShows[0];
   };
 
-  // Use React Query to fetch recommendations
-  const searchTerm = generateSearchTerms(watchedShows);
-  console.log("Generated search term:", searchTerm);
+  // Fetch genre-based search term
+  const { data: searchTerm, isLoading: termLoading } = useQuery({
+    queryKey: ['recommendation-term', watchedShows],
+    queryFn: () => generateSearchTerms(watchedShows),
+    enabled: watchedShows.length > 0,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+  
+  // Use React Query to fetch recommendations once we have a search term
+  const finalSearchTerm = searchTerm || "popular tv series";
+  console.log("Generated search term:", finalSearchTerm);
   
   const { data, isLoading: queryLoading, error } = useQuery({
-    queryKey: ['recommendations', searchTerm],
-    queryFn: () => searchShows(searchTerm),
-    enabled: true,
+    queryKey: ['recommendations', finalSearchTerm],
+    queryFn: () => searchShows(finalSearchTerm),
+    enabled: !termLoading,
     retry: 3,
     retryDelay: (attempt) => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000),
     meta: {
@@ -77,7 +102,8 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
     }
   }, [data, queryLoading, watchedShows]);
 
-  if (isLoading || queryLoading) {
+  // Display loading state
+  if (isLoading || queryLoading || termLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
@@ -114,6 +140,11 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
 
   return (
     <div className="space-y-4">
+      {genreBasedQuery && (
+        <p className="text-sm text-muted-foreground">
+          Showing recommendations based on {genreBasedQuery}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {recommendedShows.map((show: any, index: number) => (
           <ShowCard
