@@ -5,6 +5,7 @@ import { searchShows } from "@/utils/api";
 import ShowCard from "@/components/ShowCard";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface RecommendedShowsProps {
   watchedShows: string[];
@@ -16,18 +17,23 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
 
   // Function to generate search terms based on watched shows
   const generateSearchTerms = (showTitles: string[]) => {
-    // We need to search for similar shows, not by IMDb IDs
-    // Let's use some generic terms for popular genres
-    const popularGenres = ["drama", "comedy", "thriller", "fantasy", "sci-fi"];
+    // Define popular genres and shows for recommendations
+    const popularShows = [
+      "stranger things",
+      "game of thrones",
+      "breaking bad",
+      "the mandalorian",
+      "the crown"
+    ];
     
-    // If we have no watch history, return a random genre
+    // If we have no watch history, return a popular show
     if (showTitles.length === 0) {
-      const randomGenre = popularGenres[Math.floor(Math.random() * popularGenres.length)];
-      return `popular ${randomGenre} series`;
+      const randomShow = popularShows[Math.floor(Math.random() * popularShows.length)];
+      return randomShow;
     }
     
-    // For simplicity, we'll use "popular shows" as a fallback
-    return "popular television series";
+    // For simplicity, we'll use a popular show as a fallback
+    return popularShows[0];
   };
 
   // Use React Query to fetch recommendations
@@ -35,7 +41,9 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   const { data, isLoading: queryLoading, error } = useQuery({
     queryKey: ['recommendations', searchTerm],
     queryFn: () => searchShows(searchTerm),
-    enabled: true, // Always enabled since we'll search for popular shows if no watch history
+    enabled: true,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000),
     meta: {
       onError: (error: Error) => {
         console.error('Error fetching recommendations:', error);
@@ -50,6 +58,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
 
   useEffect(() => {
     if (!queryLoading && data) {
+      console.log("Recommendations data:", data);
       // Filter out shows that the user has already watched
       const filteredShows = data.filter(
         (show: any) => !watchedShows.includes(show.imdbID)
@@ -73,9 +82,12 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
 
   if (error) {
     return (
-      <div className="rounded-md bg-red-950/50 p-4 text-red-200 border border-red-800/50">
-        Unable to load recommendations. Please try again later.
-      </div>
+      <Alert variant="destructive" className="mb-6">
+        <AlertTitle>Something went wrong</AlertTitle>
+        <AlertDescription>
+          Unable to load recommendations. Please try again later.
+        </AlertDescription>
+      </Alert>
     );
   }
 

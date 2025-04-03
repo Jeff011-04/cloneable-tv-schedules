@@ -109,8 +109,15 @@ export const searchShows = async (query: string) => {
     
     // For regular search or fallback
     const searchUrl = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(query)}&type=series`;
+    console.log("Searching with URL:", searchUrl);
     
     const data = await fetchWithRetry(searchUrl);
+    
+    if (data.Error) {
+      console.error("OMDB API returned an error:", data.Error);
+      return [];
+    }
+    
     return data.Search || [];
   } catch (error) {
     console.error('Error searching shows:', error);
@@ -119,7 +126,7 @@ export const searchShows = async (query: string) => {
       description: "We couldn't complete your search. Please try again later.",
       variant: "destructive",
     });
-    throw error;
+    return []; // Return empty array instead of throwing
   }
 };
 
