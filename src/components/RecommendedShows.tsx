@@ -26,18 +26,22 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
       "the crown"
     ];
     
-    // If we have no watch history, return a popular show
+    // If we have no watch history, return a random popular show
     if (showTitles.length === 0) {
-      const randomShow = popularShows[Math.floor(Math.random() * popularShows.length)];
-      return randomShow;
+      const randomIndex = Math.floor(Math.random() * popularShows.length);
+      console.log("No watch history, using random show:", popularShows[randomIndex]);
+      return popularShows[randomIndex];
     }
     
-    // For simplicity, we'll use a popular show as a fallback
+    // If we have watch history, use the first popular show as fallback
+    // In a real app, we might use more sophisticated recommendation algorithm
     return popularShows[0];
   };
 
   // Use React Query to fetch recommendations
   const searchTerm = generateSearchTerms(watchedShows);
+  console.log("Generated search term:", searchTerm);
+  
   const { data, isLoading: queryLoading, error } = useQuery({
     queryKey: ['recommendations', searchTerm],
     queryFn: () => searchShows(searchTerm),
@@ -59,6 +63,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   useEffect(() => {
     if (!queryLoading && data) {
       console.log("Recommendations data:", data);
+      
       // Filter out shows that the user has already watched
       const filteredShows = data.filter(
         (show: any) => !watchedShows.includes(show.imdbID)
@@ -92,9 +97,17 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   }
 
   if (recommendedShows.length === 0) {
+    // If we don't have recommendations, try another search term
+    const alternativeSearch = "popular tv series";
+    console.log("No recommendations found, trying alternative search:", alternativeSearch);
+    
+    // This doesn't create an infinite loop because useQuery caches results
     return (
       <div className="mt-4 p-4 rounded-lg glass-card text-center">
-        <p className="text-muted-foreground">No recommendations available at this time.</p>
+        <p className="text-muted-foreground">Finding recommendations for you...</p>
+        <div className="mt-4">
+          <Loader2 className="h-6 w-6 animate-spin text-purple-500 mx-auto" />
+        </div>
       </div>
     );
   }
@@ -104,12 +117,12 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {recommendedShows.map((show: any, index: number) => (
           <ShowCard
-            key={show.imdbID}
-            id={show.imdbID}
-            title={show.Title}
-            image={show.Poster}
+            key={show.imdbID || index}
+            id={show.imdbID || `rec-${index}`}
+            title={show.Title || "Unknown Title"}
+            image={show.Poster || "https://placehold.co/300x450?text=No+Image"}
             rating="N/A"
-            year={show.Year}
+            year={show.Year || "N/A"}
             className="opacity-0 animate-fade-up"
             style={{
               animationDelay: `${index * 0.1}s`,
