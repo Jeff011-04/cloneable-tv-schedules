@@ -9,7 +9,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
+import ShowCard from "@/components/ShowCard";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 
 // Updated to more recent popular shows
 const FEATURED_SHOWS = ["tt13443470", "tt7660850", "tt5834204"]; // The Last of Us, Succession, Ted Lasso
@@ -18,6 +20,7 @@ const Index = () => {
   const { user } = useAuth();
   const [currentShowIndex, setCurrentShowIndex] = useState(0);
   const [watchedShowIds, setWatchedShowIds] = useState<string[]>([]);
+  const [latestShow, setLatestShow] = useState<any>(null);
 
   const { data: currentShow, isLoading, error } = useQuery({
     queryKey: ["show", FEATURED_SHOWS[currentShowIndex]],
@@ -42,13 +45,26 @@ const Index = () => {
       try {
         const { data } = await supabase
           .from('watch_history')
-          .select('show_id')
-          .eq('user_id', user.id);
+          .select('show_id, show_title, watched_at')
+          .eq('user_id', user.id)
+          .order('watched_at', { ascending: false });
         
-        if (data) {
+        if (data && data.length > 0) {
           // Fix type issue by properly casting the data
           const showIds = [...new Set(data.map(item => item.show_id as string))];
           setWatchedShowIds(showIds);
+          
+          // Set the latest watched show
+          const latest = data[0];
+          if (latest) {
+            const showDetails = await getShowDetails(latest.show_id);
+            setLatestShow({
+              id: latest.show_id,
+              title: latest.show_title,
+              details: showDetails,
+              watchedAt: new Date(latest.watched_at)
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching watch history:", error);
@@ -96,6 +112,52 @@ const Index = () => {
         description={currentShow?.Plot || "Discover and track your favorite TV shows"}
         backgroundImage={currentShow?.Poster || "https://placehold.co/1920x1080"}
       />
+      
+      {/* Latest watched show section */}
+      {user && latestShow && (
+        <div className="container mx-auto px-4 py-10 opacity-0 animate-fade-up" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
+          <div className="space-y-2 mb-6">
+            <h2 className="text-3xl font-bold text-gradient">Continue Watching</h2>
+            <Separator className="h-1 w-24 rounded bg-gradient-to-r from-green-500 to-blue-600" />
+            <p className="text-muted-foreground">
+              Last watched on {latestShow.watchedAt.toLocaleDateString()}
+            </p>
+          </div>
+          <div className="glass-card p-4 md:p-6 rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="col-span-1">
+                <ShowCard
+                  id={latestShow.id}
+                  title={latestShow.title}
+                  image={latestShow.details?.Poster || "https://placehold.co/300x450?text=No+Image"}
+                  rating={latestShow.details?.imdbRating || "N/A"}
+                  year={latestShow.details?.Year || "N/A"}
+                />
+              </div>
+              <div className="col-span-1 md:col-span-2 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">{latestShow.title}</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {latestShow.details?.Plot || "No description available"}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {latestShow.details?.Genre?.split(',').map((genre: string, i: number) => (
+                      <span key={i} className="px-3 py-1 rounded-full text-xs bg-secondary">
+                        {genre.trim()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                  <a href={`/show/${latestShow.id}`} className="inline-flex items-center justify-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 transition-colors">
+                    Continue Watching
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Recommended shows section (only for logged-in users) */}
       {user && watchedShowIds.length > 0 && (
