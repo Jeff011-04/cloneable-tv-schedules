@@ -12,7 +12,6 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
 import ShowCard from "@/components/ShowCard";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import LatestShows from "@/components/LatestShows";
 
 // Updated to more recent popular shows
 const FEATURED_SHOWS = ["tt13443470", "tt7660850", "tt5834204"]; // The Last of Us, Succession, Ted Lasso
@@ -166,18 +165,6 @@ const Index = () => {
           </div>
         </div>
       )}
-      
-      {/* Latest shows section */}
-      <div className="container mx-auto px-4 py-10 opacity-0 animate-fade-up" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
-        <div className="space-y-2 mb-6">
-          <h2 className="text-3xl font-bold text-gradient">Latest Shows</h2>
-          <Separator className="h-1 w-24 rounded bg-gradient-to-r from-yellow-500 to-orange-600" />
-          <p className="text-muted-foreground">
-            New and recent releases
-          </p>
-        </div>
-        <LatestShows />
-      </div>
       
       {/* Recommended shows section (only for logged-in users) */}
       {user && watchedShowIds.length > 0 && (
