@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 
@@ -179,37 +180,72 @@ export const getLatestShows = async (year: string = "", month: string = "") => {
   try {
     const apiKey = await getApiKey();
     
-    // If year and month are provided, search for shows from that time period
-    // Otherwise, use a default search for recent shows
-    let searchTerm;
+    // First, try to fetch shows using our standard approach
+    let searchTerms = [];
     
+    // If year and month are provided, search for shows from that time period
     if (year && month) {
       // Format month to ensure it's two digits
       const formattedMonth = month.padStart(2, '0');
-      searchTerm = `y:${year}/${formattedMonth}`;
+      searchTerms.push(`y:${year}/${formattedMonth}`);
     } else if (year) {
-      searchTerm = `y:${year}`;
+      searchTerms.push(`y:${year}`);
     } else {
       // Default to current year's shows
       const currentDate = new Date();
-      searchTerm = `y:${currentDate.getFullYear()}`;
+      searchTerms.push(`y:${currentDate.getFullYear()}`);
     }
     
-    const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(searchTerm)}&type=series`;
-    console.log("Searching for latest shows with URL:", url);
+    // Add some popular search terms as fallbacks
+    searchTerms.push("new shows", "popular series", "trending");
     
-    const data = await fetchWithRetry(url);
-    
-    if (data.Error) {
-      console.error("OMDB API returned an error:", data.Error);
-      // If the specific year/month search fails, fall back to a more general search
-      const fallbackUrl = `${BASE_URL}?apikey=${apiKey}&s=new&type=series`;
-      console.log("Falling back to:", fallbackUrl);
-      const fallbackData = await fetchWithRetry(fallbackUrl);
-      return fallbackData.Search || [];
+    // If we're looking at current year or recent months, add specific popular terms
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    if (year === currentYear.toString() || !year) {
+      searchTerms.push("latest series", "new release");
     }
     
-    return data.Search || [];
+    // Try each search term until we get results
+    for (const term of searchTerms) {
+      console.log(`Trying search term: ${term}`);
+      const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(term)}&type=series`;
+      
+      try {
+        const data = await fetchWithRetry(url, 2, 1000);
+        
+        if (data && data.Search && data.Search.length > 0) {
+          console.log(`Found ${data.Search.length} results with term "${term}"`);
+          return data.Search;
+        }
+      } catch (error) {
+        console.log(`Search term "${term}" failed, trying next option`);
+        continue;
+      }
+    }
+    
+    // If all attempts failed, use a hardcoded list of popular shows
+    console.log("All search attempts failed, using popular shows as fallback");
+    const popularShowIds = ["tt4574334", "tt5834204", "tt7660850", "tt0804484", "tt10986410"];
+    
+    // Fetch details for these shows to create a consistent response format
+    const fallbackShows = [];
+    for (const id of popularShowIds) {
+      try {
+        const details = await getShowDetails(id);
+        fallbackShows.push({
+          Title: details.Title,
+          Year: details.Year,
+          imdbID: details.imdbID,
+          Type: "series",
+          Poster: details.Poster
+        });
+      } catch (e) {
+        console.error(`Failed to fetch fallback show ${id}`, e);
+      }
+    }
+    
+    return fallbackShows;
   } catch (error) {
     console.error('Error getting latest shows:', error);
     toast({

@@ -4,8 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getLatestShows } from '@/utils/api';
 import ShowCard from './ShowCard';
 import { Separator } from './ui/separator';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from './ui/button';
+import { Loader2 } from 'lucide-react';
 import { 
   Pagination, 
   PaginationContent, 
@@ -80,10 +79,12 @@ const LatestShows = () => {
   
   const currentFilter = timeFilters[currentFilterIndex] || { year: new Date().getFullYear().toString(), month: null, label: "Latest Shows" };
   
-  const { data: shows, isLoading, error } = useQuery({
+  const { data: shows, isLoading, error, isError } = useQuery({
     queryKey: ['latestShows', currentFilter.year, currentFilter.month],
     queryFn: () => getLatestShows(currentFilter.year, currentFilter.month || ""),
-    enabled: !!currentFilter.year,
+    enabled: !!timeFilters.length,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
   });
   
   const navigateFilter = (direction: 'prev' | 'next') => {
@@ -111,13 +112,13 @@ const LatestShows = () => {
             <PaginationItem>
               <PaginationPrevious 
                 onClick={() => navigateFilter('prev')}
-                className={currentFilterIndex === 0 ? "opacity-50 pointer-events-none" : ""}
+                className={currentFilterIndex === 0 ? "opacity-50 pointer-events-none" : "cursor-pointer"}
               />
             </PaginationItem>
             <PaginationItem>
               <PaginationNext 
                 onClick={() => navigateFilter('next')}
-                className={currentFilterIndex === timeFilters.length - 1 ? "opacity-50 pointer-events-none" : ""}
+                className={currentFilterIndex === timeFilters.length - 1 ? "opacity-50 pointer-events-none" : "cursor-pointer"}
               />
             </PaginationItem>
           </PaginationContent>
@@ -128,7 +129,7 @@ const LatestShows = () => {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
         </div>
-      ) : error ? (
+      ) : isError ? (
         <div className="rounded-md bg-red-950/50 p-4 text-red-200 border border-red-800/50">
           Unable to load shows. Please try again later.
         </div>
@@ -152,7 +153,7 @@ const LatestShows = () => {
         </div>
       ) : (
         <div className="rounded-md bg-secondary/30 p-6 text-center">
-          <p>No shows found for this time period.</p>
+          <p>No shows found for this time period. Try another time filter.</p>
         </div>
       )}
     </div>
