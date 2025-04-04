@@ -5,6 +5,8 @@ import { getLatestShows } from '@/utils/api';
 import ShowCard from './ShowCard';
 import { Separator } from './ui/separator';
 import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { RefreshCcw } from 'lucide-react';
 import { 
   Pagination, 
   PaginationContent, 
@@ -12,77 +14,32 @@ import {
   PaginationNext,
   PaginationPrevious 
 } from './ui/pagination';
+import { Button } from './ui/button';
 
 type TimeFilter = {
-  year: string;
-  month: string | null;
   label: string;
+  type: 'popular' | 'trending' | 'acclaimed';
 };
 
 const LatestShows = () => {
-  const [timeFilters, setTimeFilters] = useState<TimeFilter[]>([]);
+  const [timeFilters, setTimeFilters] = useState<TimeFilter[]>([
+    { label: 'Popular Shows', type: 'popular' },
+    { label: 'Trending Shows', type: 'trending' },
+    { label: 'Acclaimed Series', type: 'acclaimed' }
+  ]);
   const [currentFilterIndex, setCurrentFilterIndex] = useState(0);
   
-  // Generate time filters for current month and previous months
-  useEffect(() => {
-    const generateTimeFilters = () => {
-      const filters: TimeFilter[] = [];
-      const today = new Date();
-      
-      // Current month
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth() + 1; // JavaScript months are 0-based
-      
-      // Add current month
-      filters.push({
-        year: currentYear.toString(),
-        month: currentMonth.toString(),
-        label: `${new Date(currentYear, currentMonth - 1).toLocaleString('default', { month: 'long' })} ${currentYear}`
-      });
-      
-      // Add previous 5 months
-      for (let i = 1; i <= 5; i++) {
-        let year = currentYear;
-        let month = currentMonth - i;
-        
-        if (month <= 0) {
-          month = 12 + month;
-          year = currentYear - 1;
-        }
-        
-        filters.push({
-          year: year.toString(),
-          month: month.toString(),
-          label: `${new Date(year, month - 1).toLocaleString('default', { month: 'long' })} ${year}`
-        });
-      }
-      
-      // Add current year (all months)
-      filters.push({
-        year: currentYear.toString(),
-        month: null,
-        label: `All of ${currentYear}`
-      });
-      
-      // Add previous year
-      filters.push({
-        year: (currentYear - 1).toString(),
-        month: null,
-        label: `All of ${currentYear - 1}`
-      });
-      
-      setTimeFilters(filters);
-    };
-    
-    generateTimeFilters();
-  }, []);
+  const currentFilter = timeFilters[currentFilterIndex];
   
-  const currentFilter = timeFilters[currentFilterIndex] || { year: new Date().getFullYear().toString(), month: null, label: "Latest Shows" };
-  
-  const { data: shows, isLoading, error, isError } = useQuery({
-    queryKey: ['latestShows', currentFilter.year, currentFilter.month],
-    queryFn: () => getLatestShows(currentFilter.year, currentFilter.month || ""),
-    enabled: !!timeFilters.length,
+  const { 
+    data: shows,
+    isLoading,
+    error,
+    isError,
+    refetch
+  } = useQuery({
+    queryKey: ['latestShows', currentFilter.type],
+    queryFn: () => getLatestShows(),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
   });
@@ -94,14 +51,6 @@ const LatestShows = () => {
       setCurrentFilterIndex(prev => (prev < timeFilters.length - 1 ? prev + 1 : prev));
     }
   };
-  
-  if (timeFilters.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-      </div>
-    );
-  }
   
   return (
     <div className="space-y-6">
@@ -130,9 +79,22 @@ const LatestShows = () => {
           <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
         </div>
       ) : isError ? (
-        <div className="rounded-md bg-red-950/50 p-4 text-red-200 border border-red-800/50">
-          Unable to load shows. Please try again later.
-        </div>
+        <Alert variant="destructive" className="bg-red-950/50 border border-red-800/50">
+          <div className="flex justify-between items-center">
+            <div>
+              <AlertTitle>Unable to load shows</AlertTitle>
+              <AlertDescription>We couldn't fetch the latest shows. Please try again.</AlertDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetch()}
+              className="border-red-400 text-red-400 hover:bg-red-950"
+            >
+              <RefreshCcw className="h-4 w-4 mr-2" /> Retry
+            </Button>
+          </div>
+        </Alert>
       ) : shows && shows.length > 0 ? (
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {shows.map((show: any, idx: number) => (
@@ -141,7 +103,7 @@ const LatestShows = () => {
               id={show.imdbID}
               title={show.Title}
               image={show.Poster}
-              rating="N/A"
+              rating={show.imdbRating || "N/A"}
               year={show.Year}
               className="opacity-0 animate-fade-up"
               style={{
@@ -153,7 +115,7 @@ const LatestShows = () => {
         </div>
       ) : (
         <div className="rounded-md bg-secondary/30 p-6 text-center">
-          <p>No shows found for this time period. Try another time filter.</p>
+          <p>No shows found. Try another filter or check back later.</p>
         </div>
       )}
     </div>

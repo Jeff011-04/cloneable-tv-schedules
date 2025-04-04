@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 
@@ -180,40 +179,23 @@ export const getLatestShows = async (year: string = "", month: string = "") => {
   try {
     const apiKey = await getApiKey();
     
-    // First, try to fetch shows using our standard approach
-    let searchTerms = [];
-    
-    // If year and month are provided, search for shows from that time period
-    if (year && month) {
-      // Format month to ensure it's two digits
-      const formattedMonth = month.padStart(2, '0');
-      searchTerms.push(`y:${year}/${formattedMonth}`);
-    } else if (year) {
-      searchTerms.push(`y:${year}`);
-    } else {
-      // Default to current year's shows
-      const currentDate = new Date();
-      searchTerms.push(`y:${currentDate.getFullYear()}`);
-    }
-    
-    // Add some popular search terms as fallbacks
-    searchTerms.push("new shows", "popular series", "trending");
-    
-    // If we're looking at current year or recent months, add specific popular terms
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    if (year === currentYear.toString() || !year) {
-      searchTerms.push("latest series", "new release");
-    }
+    // First, try to search for popular shows instead of searching by date patterns
+    const searchTerms = [
+      "popular series 2023",
+      "trending shows",
+      "best series",
+      "new shows",
+      "hit television",
+      "acclaimed series",
+    ];
     
     // Try each search term until we get results
     for (const term of searchTerms) {
-      console.log(`Trying search term: ${term}`);
+      console.log(`Trying search term: "${term}"`);
       const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(term)}&type=series`;
       
       try {
         const data = await fetchWithRetry(url, 2, 1000);
-        
         if (data && data.Search && data.Search.length > 0) {
           console.log(`Found ${data.Search.length} results with term "${term}"`);
           return data.Search;
@@ -226,7 +208,15 @@ export const getLatestShows = async (year: string = "", month: string = "") => {
     
     // If all attempts failed, use a hardcoded list of popular shows
     console.log("All search attempts failed, using popular shows as fallback");
-    const popularShowIds = ["tt4574334", "tt5834204", "tt7660850", "tt0804484", "tt10986410"];
+    const popularShowIds = [
+      "tt4574334", // Stranger Things
+      "tt7660850", // Succession
+      "tt5834204", // Handmaid's Tale
+      "tt0804484", // Foundation
+      "tt10986410", // Ted Lasso
+      "tt13443470", // Wednesday
+      "tt3581920"  // The Last of Us
+    ];
     
     // Fetch details for these shows to create a consistent response format
     const fallbackShows = [];
