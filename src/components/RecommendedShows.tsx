@@ -86,20 +86,46 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   });
 
   useEffect(() => {
-    if (!queryLoading && data) {
-      console.log("Recommendations data:", data);
-      
-      // Filter out shows that the user has already watched
-      const filteredShows = data.filter(
-        (show: any) => !watchedShows.includes(show.imdbID)
-      );
-      
-      // Take up to 5 recommendations
-      setRecommendedShows(filteredShows.slice(0, 5));
-      setIsLoading(false);
-    } else if (!queryLoading && !data) {
-      setIsLoading(false);
-    }
+    const fetchDetailedRecommendations = async () => {
+      if (!queryLoading && data) {
+        console.log("Recommendations data:", data);
+        
+        // Filter out shows that the user has already watched
+        const filteredShows = data.filter(
+          (show: any) => !watchedShows.includes(show.imdbID)
+        );
+        
+        try {
+          // Fetch detailed information for each show (including ratings)
+          const detailedShowsPromises = filteredShows.slice(0, 5).map(async (show: any) => {
+            try {
+              const details = await getShowDetails(show.imdbID);
+              return {
+                ...show,
+                rating: details.imdbRating || "N/A",
+                details
+              };
+            } catch (error) {
+              console.error(`Error fetching details for ${show.Title}:`, error);
+              return show;
+            }
+          });
+          
+          const detailedShows = await Promise.all(detailedShowsPromises);
+          setRecommendedShows(detailedShows);
+        } catch (error) {
+          console.error("Error fetching show details:", error);
+          // Fallback to shows without detailed information
+          setRecommendedShows(filteredShows.slice(0, 5));
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (!queryLoading && !data) {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDetailedRecommendations();
   }, [data, queryLoading, watchedShows]);
 
   // Display loading state
@@ -152,7 +178,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
             id={show.imdbID || `rec-${index}`}
             title={show.Title || "Unknown Title"}
             image={show.Poster || "https://placehold.co/300x450?text=No+Image"}
-            rating="N/A"
+            rating={show.rating || "N/A"}
             year={show.Year || "N/A"}
             className="opacity-0 animate-fade-up"
             style={{

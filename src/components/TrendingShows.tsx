@@ -2,9 +2,10 @@
 import { useQuery } from "@tanstack/react-query";
 import ShowCard from "./ShowCard";
 import { Separator } from "./ui/separator";
-import { getShowsByCategory } from "@/utils/api";
+import { getShowsByCategory, getShowDetails } from "@/utils/api";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { useState, useEffect } from "react";
 
 const TrendingShows = () => {
   const categories = [
@@ -35,6 +36,9 @@ const CategorySection = ({
   color: string;
   index: number;
 }) => {
+  const [showsWithRatings, setShowsWithRatings] = useState<any[]>([]);
+  const [isLoadingRatings, setIsLoadingRatings] = useState(false);
+
   const { data: shows, isLoading, error } = useQuery({
     queryKey: ["shows", search],
     queryFn: () => getShowsByCategory(search),
@@ -49,6 +53,45 @@ const CategorySection = ({
       }
     }
   });
+
+  // Fetch detailed information including ratings for each show
+  useEffect(() => {
+    const fetchDetailedShows = async () => {
+      if (!shows || shows.length === 0) return;
+      
+      setIsLoadingRatings(true);
+      
+      try {
+        // Take the first 5 shows to avoid too many requests
+        const showsToFetch = shows.slice(0, 5);
+        const detailedShowsPromises = showsToFetch.map(async (show: any) => {
+          try {
+            const details = await getShowDetails(show.imdbID);
+            return {
+              ...show,
+              rating: details.imdbRating || "N/A",
+              details
+            };
+          } catch (error) {
+            console.error(`Error fetching details for ${show.Title}:`, error);
+            return {
+              ...show,
+              rating: "N/A"
+            };
+          }
+        });
+        
+        const detailedShows = await Promise.all(detailedShowsPromises);
+        setShowsWithRatings(detailedShows);
+      } catch (error) {
+        console.error("Error fetching show details:", error);
+      } finally {
+        setIsLoadingRatings(false);
+      }
+    };
+    
+    fetchDetailedShows();
+  }, [shows]);
 
   if (isLoading) {
     return (
@@ -77,6 +120,7 @@ const CategorySection = ({
   }
 
   const animationDelay = index * 0.1;
+  const displayShows = showsWithRatings.length > 0 ? showsWithRatings : shows;
 
   return (
     <section className="space-y-8 opacity-0 animate-fade-up" style={{ animationDelay: `${animationDelay}s`, animationFillMode: 'forwards' }}>
@@ -85,13 +129,13 @@ const CategorySection = ({
         <Separator className={`h-1 w-24 rounded bg-gradient-to-r ${color}`} />
       </div>
       <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {shows.map((show: any, idx: number) => (
+        {displayShows.map((show: any, idx: number) => (
           <ShowCard
             key={show.imdbID}
             id={show.imdbID}
             title={show.Title}
             image={show.Poster}
-            rating="N/A"
+            rating={show.rating || show.imdbRating || "N/A"}
             year={show.Year}
             className="opacity-0 animate-fade-up"
             style={{
@@ -101,6 +145,12 @@ const CategorySection = ({
           />
         ))}
       </div>
+      {isLoadingRatings && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-6 w-6 animate-spin text-purple-500 mr-2" />
+          <span className="text-sm text-muted-foreground">Loading ratings...</span>
+        </div>
+      )}
     </section>
   );
 };
