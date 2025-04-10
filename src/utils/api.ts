@@ -175,29 +175,28 @@ export const getSeasonDetails = async (id: string, season: string) => {
   }
 };
 
-export const getLatestShows = async (year: string = "", month: string = "") => {
+export const getLatestShows = async () => {
   try {
     const apiKey = await getApiKey();
+    const currentYear = new Date().getFullYear().toString(); // Get current year (2025)
     
-    // First, try to search for popular shows instead of searching by date patterns
+    // First try to search for shows from the current year
     const searchTerms = [
-      "popular series 2023",
-      "trending shows",
-      "best series",
-      "new shows",
-      "hit television",
-      "acclaimed series",
+      `${currentYear}`, // Just the year
+      `new series ${currentYear}`,
+      `recent shows ${currentYear}`,
+      `latest series ${currentYear}`,
     ];
     
     // Try each search term until we get results
     for (const term of searchTerms) {
-      console.log(`Trying search term: "${term}"`);
-      const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(term)}&type=series`;
+      console.log(`Trying to find latest shows with search term: "${term}"`);
+      const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(term)}&type=series&y=${currentYear}`;
       
       try {
         const data = await fetchWithRetry(url, 2, 1000);
         if (data && data.Search && data.Search.length > 0) {
-          console.log(`Found ${data.Search.length} results with term "${term}"`);
+          console.log(`Found ${data.Search.length} shows from ${currentYear} with term "${term}"`);
           return data.Search;
         }
       } catch (error) {
@@ -206,21 +205,37 @@ export const getLatestShows = async (year: string = "", month: string = "") => {
       }
     }
     
-    // If all attempts failed, use a hardcoded list of popular shows
-    console.log("All search attempts failed, using popular shows as fallback");
-    const popularShowIds = [
-      "tt4574334", // Stranger Things
-      "tt7660850", // Succession
-      "tt5834204", // Handmaid's Tale
-      "tt0804484", // Foundation
-      "tt10986410", // Ted Lasso
-      "tt13443470", // Wednesday
-      "tt3581920"  // The Last of Us
+    // If all attempts failed with the year parameter, try without year restriction
+    // but still searching for current year in the query
+    console.log("Trying without year parameter restriction");
+    for (const term of searchTerms) {
+      try {
+        const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(term)}&type=series`;
+        const data = await fetchWithRetry(url, 2, 1000);
+        if (data && data.Search && data.Search.length > 0) {
+          console.log(`Found ${data.Search.length} results with term "${term}" without year restriction`);
+          return data.Search;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+    
+    // If all attempts failed, use a hardcoded list of popular 2025 shows
+    console.log("All search attempts failed, using hardcoded 2025 shows as fallback");
+    const recentShowIds = [
+      "tt13443470", // Wednesday (using this even though it's not 2025 as it's known)
+      "tt14269590", // The Last Thing He Told Me
+      "tt13016784", // The Night Agent
+      "tt14230388", // Citadel
+      "tt16419984", // Beef
+      "tt15397918", // Daisy Jones & the Six
+      "tt15334488", // Hijack
     ];
     
     // Fetch details for these shows to create a consistent response format
     const fallbackShows = [];
-    for (const id of popularShowIds) {
+    for (const id of recentShowIds) {
       try {
         const details = await getShowDetails(id);
         fallbackShows.push({

@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import HeroSection from "@/components/HeroSection";
 import TrendingShows from "@/components/TrendingShows";
@@ -12,8 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
 import ShowCard from "@/components/ShowCard";
 
-// Updated to more recent popular shows
-const FEATURED_SHOWS = ["tt13443470", "tt7660850", "tt5834204"]; // The Last of Us, Succession, Ted Lasso
+const FEATURED_SHOWS = ["tt13443470", "tt7660850", "tt5834204"];
 
 const Index = () => {
   const { user } = useAuth();
@@ -29,22 +27,20 @@ const Index = () => {
     retryDelay: (attempt) => Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000),
   });
 
-  // New query to fetch latest shows
   const { data: latestShows, isLoading: isLoadingLatest, error: latestError } = useQuery({
     queryKey: ["latestShows"],
     queryFn: () => getLatestShows(),
-    staleTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60 * 30,
   });
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentShowIndex((prev) => (prev + 1) % FEATURED_SHOWS.length);
-    }, 5000); // Change show every 5 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch watched shows if user is logged in
   useEffect(() => {
     const fetchWatchedShows = async () => {
       if (!user) return;
@@ -57,14 +53,11 @@ const Index = () => {
           .order('watched_at', { ascending: false });
         
         if (data && data.length > 0) {
-          // Fix type issue by properly casting the data
           const showIds = [...new Set(data.map(item => item.show_id as string))];
           setWatchedShowIds(showIds);
           
-          // Set the latest watched show
           const latest = data[0];
           
-          // Check if there are any episodes with season and episode info
           const hasEpisodes = data.some(item => item.episode_number || item.season_number);
           setHasWatchedEpisodes(hasEpisodes);
           
@@ -89,7 +82,6 @@ const Index = () => {
     }
   }, [user]);
 
-  // Show error toast if there's an issue
   useEffect(() => {
     if (featuredError) {
       console.error("Error loading featured show:", featuredError);
@@ -126,12 +118,11 @@ const Index = () => {
         backgroundImage={currentShow?.Poster || "https://placehold.co/1920x1080"}
       />
       
-      {/* Latest series section */}
       <div className="container mx-auto px-4 py-10 opacity-0 animate-fade-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
         <div className="space-y-2 mb-6">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">Latest Series</h2>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">{new Date().getFullYear()} Series</h2>
           <Separator className="h-1 w-24 rounded bg-gradient-to-r from-cyan-500 to-blue-600" />
-          <p className="text-muted-foreground">Discover the newest shows available</p>
+          <p className="text-muted-foreground">Discover the newest shows from {new Date().getFullYear()}</p>
         </div>
         
         {isLoadingLatest ? (
@@ -163,7 +154,6 @@ const Index = () => {
         )}
       </div>
       
-      {/* Continue watching section - only show if there's episode data */}
       {user && latestShow && hasWatchedEpisodes && (
         <div className="container mx-auto px-4 py-10 opacity-0 animate-fade-up" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
           <div className="space-y-2 mb-6">
@@ -209,7 +199,6 @@ const Index = () => {
         </div>
       )}
       
-      {/* Recommended shows section (only for logged-in users) */}
       {user && watchedShowIds.length > 0 && (
         <div className="container mx-auto px-4 py-10 opacity-0 animate-fade-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
           <div className="space-y-2 mb-6">
