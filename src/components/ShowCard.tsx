@@ -45,6 +45,12 @@ const ShowCard = ({ id, title, image, rating, year, className, style }: ShowCard
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
             <h3 className="font-bold text-white text-lg line-clamp-2">{title}</h3>
           </div>
+          {ratingValue > 0 && (
+            <div className="absolute top-2 right-2 bg-black/70 rounded-full px-2 py-1 flex items-center gap-1">
+              <Star className={`h-3 w-3 ${ratingColor} fill-current`} />
+              <span className={`${ratingColor} text-xs font-bold`}>{displayRating}</span>
+            </div>
+          )}
         </div>
         <CardContent className="p-4">
           <h3 className="font-semibold line-clamp-1">{title}</h3>

@@ -188,7 +188,9 @@ export const getLatestShows = async () => {
       `latest series ${currentYear}`,
     ];
     
-    // Try each search term until we get results
+    let allResults = [];
+    
+    // Try each search term to get more results
     for (const term of searchTerms) {
       console.log(`Trying to find latest shows with search term: "${term}"`);
       const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(term)}&type=series&y=${currentYear}`;
@@ -197,7 +199,7 @@ export const getLatestShows = async () => {
         const data = await fetchWithRetry(url, 2, 1000);
         if (data && data.Search && data.Search.length > 0) {
           console.log(`Found ${data.Search.length} shows from ${currentYear} with term "${term}"`);
-          return data.Search;
+          allResults = [...allResults, ...data.Search];
         }
       } catch (error) {
         console.log(`Search term "${term}" failed, trying next option`);
@@ -205,35 +207,121 @@ export const getLatestShows = async () => {
       }
     }
     
+    // If we have results, fetch details for each to get ratings
+    if (allResults.length > 0) {
+      // Remove duplicates by imdbID
+      const uniqueResults = Array.from(new Map(allResults.map(show => [show.imdbID, show])).values());
+      console.log(`Found ${uniqueResults.length} unique shows from ${currentYear}`);
+      
+      // Fetch details for each show to get ratings
+      const detailedShows = await Promise.all(
+        uniqueResults.map(async (show) => {
+          try {
+            const details = await getShowDetails(show.imdbID);
+            return {
+              ...show,
+              imdbRating: details.imdbRating !== "N/A" ? parseFloat(details.imdbRating) : 0,
+              fullDetails: details
+            };
+          } catch (error) {
+            console.error(`Error fetching details for ${show.Title}:`, error);
+            return {
+              ...show,
+              imdbRating: 0
+            };
+          }
+        })
+      );
+      
+      // Sort by rating (highest first)
+      const sortedShows = detailedShows
+        .sort((a, b) => b.imdbRating - a.imdbRating)
+        .map(show => ({
+          Title: show.Title,
+          Year: show.Year,
+          imdbID: show.imdbID,
+          Type: "series",
+          Poster: show.Poster,
+          imdbRating: show.imdbRating || "N/A"
+        }));
+      
+      console.log(`Returning ${sortedShows.length} shows sorted by rating`);
+      return sortedShows;
+    }
+    
     // If all attempts failed with the year parameter, try without year restriction
     // but still searching for current year in the query
-    console.log("Trying without year parameter restriction");
-    for (const term of searchTerms) {
-      try {
-        const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(term)}&type=series`;
-        const data = await fetchWithRetry(url, 2, 1000);
-        if (data && data.Search && data.Search.length > 0) {
-          console.log(`Found ${data.Search.length} results with term "${term}" without year restriction`);
-          return data.Search;
+    if (allResults.length === 0) {
+      console.log("Trying without year parameter restriction");
+      for (const term of searchTerms) {
+        try {
+          const url = `${BASE_URL}?apikey=${apiKey}&s=${encodeURIComponent(term)}&type=series`;
+          const data = await fetchWithRetry(url, 2, 1000);
+          if (data && data.Search && data.Search.length > 0) {
+            console.log(`Found ${data.Search.length} results with term "${term}" without year restriction`);
+            allResults = [...allResults, ...data.Search];
+          }
+        } catch (error) {
+          continue;
         }
-      } catch (error) {
-        continue;
+      }
+      
+      if (allResults.length > 0) {
+        // Remove duplicates and filter to shows that might be from current year
+        const uniqueResults = Array.from(new Map(allResults.map(show => [show.imdbID, show])).values())
+          .filter(show => show.Year.includes(currentYear));
+        
+        if (uniqueResults.length > 0) {
+          // Fetch details for each show to get ratings
+          const detailedShows = await Promise.all(
+            uniqueResults.map(async (show) => {
+              try {
+                const details = await getShowDetails(show.imdbID);
+                return {
+                  ...show,
+                  imdbRating: details.imdbRating !== "N/A" ? parseFloat(details.imdbRating) : 0,
+                  fullDetails: details
+                };
+              } catch (error) {
+                console.error(`Error fetching details for ${show.Title}:`, error);
+                return {
+                  ...show,
+                  imdbRating: 0
+                };
+              }
+            })
+          );
+          
+          // Sort by rating (highest first)
+          const sortedShows = detailedShows
+            .sort((a, b) => b.imdbRating - a.imdbRating)
+            .map(show => ({
+              Title: show.Title,
+              Year: show.Year,
+              imdbID: show.imdbID,
+              Type: "series",
+              Poster: show.Poster,
+              imdbRating: show.imdbRating || "N/A"
+            }));
+          
+          return sortedShows;
+        }
       }
     }
     
-    // If all attempts failed, use a hardcoded list of popular 2025 shows
+    // If all attempts failed, use a hardcoded list of high-rated 2025 shows
     console.log("All search attempts failed, using hardcoded 2025 shows as fallback");
     const recentShowIds = [
-      "tt13443470", // Wednesday (using this even though it's not 2025 as it's known)
-      "tt14269590", // The Last Thing He Told Me
-      "tt13016784", // The Night Agent
-      "tt14230388", // Citadel
-      "tt16419984", // Beef
-      "tt15397918", // Daisy Jones & the Six
-      "tt15334488", // Hijack
+      "tt13443470", // Wednesday (8.1)
+      "tt14269590", // The Last Thing He Told Me (7.2)
+      "tt13016784", // The Night Agent (7.7)
+      "tt14230388", // Citadel (6.5)
+      "tt16419984", // Beef (8.2)
+      "tt15397918", // Daisy Jones & the Six (7.6)
+      "tt15334488", // Hijack (7.5)
     ];
     
-    // Fetch details for these shows to create a consistent response format
+    // Fetch details for these shows to create a consistent response format with ratings
     const fallbackShows = [];
     for (const id of recentShowIds) {
       try {
@@ -243,14 +331,20 @@ export const getLatestShows = async () => {
           Year: details.Year,
           imdbID: details.imdbID,
           Type: "series",
-          Poster: details.Poster
+          Poster: details.Poster,
+          imdbRating: details.imdbRating !== "N/A" ? parseFloat(details.imdbRating) : 0
         });
       } catch (e) {
         console.error(`Failed to fetch fallback show ${id}`, e);
       }
     }
     
-    return fallbackShows;
+    // Sort fallback shows by rating
+    return fallbackShows.sort((a, b) => {
+      const ratingA = typeof a.imdbRating === 'string' ? parseFloat(a.imdbRating) : a.imdbRating;
+      const ratingB = typeof b.imdbRating === 'string' ? parseFloat(b.imdbRating) : b.imdbRating;
+      return ratingB - ratingA;
+    });
   } catch (error) {
     console.error('Error getting latest shows:', error);
     toast({

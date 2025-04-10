@@ -120,9 +120,13 @@ const Index = () => {
       
       <div className="container mx-auto px-4 py-10 opacity-0 animate-fade-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
         <div className="space-y-2 mb-6">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">{new Date().getFullYear()} Series</h2>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
+            Top-Rated Series of {new Date().getFullYear()}
+          </h2>
           <Separator className="h-1 w-24 rounded bg-gradient-to-r from-cyan-500 to-blue-600" />
-          <p className="text-muted-foreground">Discover the newest shows from {new Date().getFullYear()}</p>
+          <p className="text-muted-foreground">
+            Discover the highest-rated new shows from {new Date().getFullYear()}
+          </p>
         </div>
         
         {isLoadingLatest ? (
