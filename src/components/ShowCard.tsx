@@ -15,6 +15,18 @@ interface ShowCardProps {
 }
 
 const ShowCard = ({ id, title, image, rating, year, className, style }: ShowCardProps) => {
+  // Format rating to handle edge cases
+  const formattedRating = rating === "N/A" ? "0.0" : rating;
+  const displayRating = formattedRating === "0.0" ? "-" : formattedRating;
+  
+  // Determine rating color
+  const ratingValue = parseFloat(formattedRating);
+  const ratingColor = 
+    ratingValue >= 8 ? "text-green-400" : 
+    ratingValue >= 6 ? "text-yellow-400" : 
+    ratingValue > 0 ? "text-orange-400" : 
+    "text-gray-400";
+
   return (
     <Link to={`/show/${id}`}>
       <Card 
@@ -38,8 +50,8 @@ const ShowCard = ({ id, title, image, rating, year, className, style }: ShowCard
           <h3 className="font-semibold line-clamp-1">{title}</h3>
           <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-              <span>{rating}</span>
+              <Star className={`h-4 w-4 ${ratingColor} ${ratingValue > 0 ? "fill-current" : ""}`} />
+              <span className={ratingColor}>{displayRating}</span>
             </div>
             <span className="font-medium text-purple-400">{year}</span>
           </div>

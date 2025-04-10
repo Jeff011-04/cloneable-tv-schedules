@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { searchShows, getShowDetails } from "@/utils/api";
 import ShowCard from "@/components/ShowCard";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 interface RecommendedShowsProps {
   watchedShows: string[];
@@ -15,6 +16,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   const [recommendedShows, setRecommendedShows] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [genreBasedQuery, setGenreBasedQuery] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   // Function to generate search terms based on watched shows and their genres
   const generateSearchTerms = async (showIds: string[]) => {
@@ -67,7 +69,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
   const finalSearchTerm = searchTerm || "popular tv series";
   console.log("Generated search term:", finalSearchTerm);
   
-  const { data, isLoading: queryLoading, error } = useQuery({
+  const { data, isLoading: queryLoading, error, refetch } = useQuery({
     queryKey: ['recommendations', finalSearchTerm],
     queryFn: () => searchShows(finalSearchTerm),
     enabled: !termLoading,
@@ -81,6 +83,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
           description: "We couldn't load recommendations. Please try again later.",
           variant: "destructive",
         });
+        setHasError(true);
       }
     }
   });
@@ -89,6 +92,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
     const fetchDetailedRecommendations = async () => {
       if (!queryLoading && data) {
         console.log("Recommendations data:", data);
+        setHasError(false);
         
         // Filter out shows that the user has already watched
         const filteredShows = data.filter(
@@ -102,12 +106,15 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
               const details = await getShowDetails(show.imdbID);
               return {
                 ...show,
-                rating: details.imdbRating || "N/A",
+                rating: details.imdbRating !== "N/A" ? details.imdbRating : "0.0",
                 details
               };
             } catch (error) {
               console.error(`Error fetching details for ${show.Title}:`, error);
-              return show;
+              return {
+                ...show,
+                rating: "0.0"
+              };
             }
           });
           
@@ -116,7 +123,10 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
         } catch (error) {
           console.error("Error fetching show details:", error);
           // Fallback to shows without detailed information
-          setRecommendedShows(filteredShows.slice(0, 5));
+          setRecommendedShows(filteredShows.slice(0, 5).map(show => ({
+            ...show,
+            rating: "0.0"
+          })));
         } finally {
           setIsLoading(false);
         }
@@ -128,6 +138,12 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
     fetchDetailedRecommendations();
   }, [data, queryLoading, watchedShows]);
 
+  const handleRetry = () => {
+    setIsLoading(true);
+    setHasError(false);
+    refetch();
+  };
+
   // Display loading state
   if (isLoading || queryLoading || termLoading) {
     return (
@@ -137,12 +153,15 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
     );
   }
 
-  if (error) {
+  if (error || hasError) {
     return (
       <Alert variant="destructive" className="mb-6">
         <AlertTitle>Something went wrong</AlertTitle>
         <AlertDescription>
-          Unable to load recommendations. Please try again later.
+          <p className="mb-2">Unable to load recommendations. Please try again later.</p>
+          <Button variant="outline" size="sm" onClick={handleRetry} className="flex items-center gap-1 mt-2">
+            <RefreshCw className="h-4 w-4" /> Retry
+          </Button>
         </AlertDescription>
       </Alert>
     );
@@ -178,7 +197,7 @@ const RecommendedShows = ({ watchedShows }: RecommendedShowsProps) => {
             id={show.imdbID || `rec-${index}`}
             title={show.Title || "Unknown Title"}
             image={show.Poster || "https://placehold.co/300x450?text=No+Image"}
-            rating={show.rating || "N/A"}
+            rating={show.rating || "0.0"}
             year={show.Year || "N/A"}
             className="opacity-0 animate-fade-up"
             style={{

@@ -3,9 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import ShowCard from "./ShowCard";
 import { Separator } from "./ui/separator";
 import { getShowsByCategory, getShowDetails } from "@/utils/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useState, useEffect } from "react";
+import { Button } from "./ui/button";
 
 const TrendingShows = () => {
   const categories = [
@@ -38,8 +39,9 @@ const CategorySection = ({
 }) => {
   const [showsWithRatings, setShowsWithRatings] = useState<any[]>([]);
   const [isLoadingRatings, setIsLoadingRatings] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
-  const { data: shows, isLoading, error } = useQuery({
+  const { data: shows, isLoading, error, refetch } = useQuery({
     queryKey: ["shows", search],
     queryFn: () => getShowsByCategory(search),
     meta: {
@@ -50,6 +52,7 @@ const CategorySection = ({
           description: "We couldn't load the latest shows. Please try again later.",
           variant: "destructive",
         });
+        setHasError(true);
       }
     }
   });
@@ -60,6 +63,7 @@ const CategorySection = ({
       if (!shows || shows.length === 0) return;
       
       setIsLoadingRatings(true);
+      setHasError(false);
       
       try {
         // Take the first 5 shows to avoid too many requests
@@ -69,14 +73,14 @@ const CategorySection = ({
             const details = await getShowDetails(show.imdbID);
             return {
               ...show,
-              rating: details.imdbRating || "N/A",
+              rating: details.imdbRating !== "N/A" ? details.imdbRating : "0.0",
               details
             };
           } catch (error) {
             console.error(`Error fetching details for ${show.Title}:`, error);
             return {
               ...show,
-              rating: "N/A"
+              rating: "0.0"
             };
           }
         });
@@ -85,6 +89,7 @@ const CategorySection = ({
         setShowsWithRatings(detailedShows);
       } catch (error) {
         console.error("Error fetching show details:", error);
+        setHasError(true);
       } finally {
         setIsLoadingRatings(false);
       }
@@ -92,6 +97,11 @@ const CategorySection = ({
     
     fetchDetailedShows();
   }, [shows]);
+
+  const handleRetry = () => {
+    setHasError(false);
+    refetch();
+  };
 
   if (isLoading) {
     return (
@@ -101,7 +111,7 @@ const CategorySection = ({
     );
   }
 
-  if (error) {
+  if (error || hasError) {
     return (
       <section className="space-y-6">
         <div className="space-y-2">
@@ -109,7 +119,10 @@ const CategorySection = ({
           <Separator className="bg-gray-800" />
         </div>
         <div className="rounded-md bg-red-950/50 p-4 text-red-200 border border-red-800/50">
-          Unable to load shows. Please try again later.
+          <p className="mb-2">Unable to load shows. Please try again later.</p>
+          <Button variant="outline" size="sm" onClick={handleRetry} className="flex items-center gap-1">
+            <RefreshCw className="h-4 w-4" /> Retry
+          </Button>
         </div>
       </section>
     );
@@ -135,7 +148,7 @@ const CategorySection = ({
             id={show.imdbID}
             title={show.Title}
             image={show.Poster}
-            rating={show.rating || show.imdbRating || "N/A"}
+            rating={show.rating || show.imdbRating || "0.0"}
             year={show.Year}
             className="opacity-0 animate-fade-up"
             style={{
